@@ -1,0 +1,76 @@
+
+EXAMPLE
+=======
+The following code should perform a 3 legged oauth request using Yahoo as the service provider:
+
+  Just reqUrl = parseURL "https://api.login.yahoo.com/oauth/v2/get_request_token"
+  Just accUrl = parseURL "https://api.login.yahoo.com/oauth/v2/get_token"
+  Just srvUrl = parseURL "http://query.yahooapis.com/v1/yql?q=select%20%2A%20from%20social.profile%20where%20guid%3Dme"
+  authUrl     = head . find (=="xoauth_request_auth_url") . oauthParams
+  app         = Application "<consumer key>" "<consumer secret>" OOB
+  response    = runOAuth $ do ignite app
+                              oauthRequest PLAINTEXT Nothing reqUrl
+                              cliAskAuthorization authUrl
+                              oauthRequest PLAINTEXT Nothing accUrl
+                              serviceRequest HMACSHA1 (Just "yahooapis.com") srvUrl
+
+Another example, this time using Twitter as the service provider:
+
+  Just reqUrl = parseURL "http://twitter.com/oauth/request_token"
+  Just accUrl = parseURL "http://twitter.com/oauth/access_token"
+  Just srvUrl = parseURL "http://api.twitter.com/1/statuses/home_timeline.xml"
+  authUrl     = ("http://twitter.com/oauth/authorize?oauth_token="++) . findWithDefault ("oauth_token","") . oauthParams
+  app         = Application "<consumer key>" "<consumer secret>" OOB
+  response    = runOAuth $ do ignite app
+                              oauthRequest HMACSHA1 Nothing reqUrl
+                              cliAskAuthorization authUrl
+                              oauthRequest HMACSHA1 Nothing accUrl
+                              serviceRequest HMACSHA1 Nothing srvUrl
+
+REFERENCES
+==========
+  * ./src/test/haskell/Tests.hs
+  * http://oauth.net/
+
+CHANGELOG
+=========
+v0_2_0
+  * Complete refactoring of the API:
+    + The major change is that the API is now capable of performing HTTP requests, thus fully capable of dealing with the OAuth protocol;
+    + Temporally dropped RSA signature support;
+
+V0_1_9
+v0_1_8
+v0_1_7
+V0_1_6
+v0_1_5
+  * minor changes:
+    + another attempt to fix haddock errors on hackage
+
+v0_1_4
+V0_1_3
+  * minor changes:
+    + adding nonce_and_timestamp function
+
+V0_1_2
+  * minor changes:
+    + using Control.Monad in Consumer#response function
+    + removing useless apply function in Request
+    + changing append_param function interface
+
+v0_1_1
+  * fixing compiler warnings
+  * fixing haddock errors/warnings
+
+v0_1_0
+  * implementing RSA-SHA1 signature method
+
+v0_0_4
+  * Changing the license to BSD3
+
+v0_0_3
+  * Adding/Implementing a few utility functions
+
+v0_0_1
+  * First release
+
