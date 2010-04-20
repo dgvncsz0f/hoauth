@@ -30,11 +30,15 @@ import Test.Network.OAuth.Http.Request as R
 import Test.Network.OAuth.Http.PercentEncoding as P
 import Test.Network.OAuth.Http.Util as U
 import Test.Network.OAuth.Http.HttpClient as W
+import System 
 
 all_tests = let fast = [C.fast_tests,R.fast_tests,P.fast_tests,U.fast_tests,W.fast_tests]
                 slow = [C.slow_tests,R.slow_tests,P.slow_tests,U.slow_tests,W.slow_tests]
             in T.runTestTT . T.TestList . concat $ (fast ++ slow)
 
-main = all_tests
+main :: IO ()
+main = all_tests >>= exitWith . exitStatus
+  where exitStatus stats | T.errors stats + T.failures stats > 0 = ExitFailure 1
+                         | otherwise                             = ExitSuccess
 
 -- vim:sts=2:sw=2:ts=2:et

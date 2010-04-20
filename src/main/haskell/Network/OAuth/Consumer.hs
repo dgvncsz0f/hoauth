@@ -110,7 +110,7 @@ data Application = Application { consKey  :: String
                                , consSec  :: String
                                , callback :: OAuthCallback
                                }
-  deriving (Show,Eq)
+  deriving (Eq)
 
 -- | The OAuth Token.
 data Token =   
@@ -119,8 +119,9 @@ data Token =
     TwoLegg {application :: Application 
             ,oauthParams :: FieldList
             }
-  {-| The request token is a 2 legged OAuth. At this point, the service
-      provider has validated your application.
+  {-| The service provider has granted you the request token but the user has
+      not yet authorized your application. If you use this token it will goes
+      as 2 legged OAuth.
    -}
   | ReqToken {application :: Application
              ,oauthParams :: FieldList
@@ -325,7 +326,7 @@ instance Bi.Binary OAuthCallback where
            case t
             of 0 -> return OOB
                1 -> fmap URL Bi.get
-               _ -> error "Consumer: parse error"
+               _ -> fail "Consumer: parse error"
 
 instance Bi.Binary Application where
   put app = do Bi.put (consKey app)
@@ -358,6 +359,6 @@ instance Bi.Binary Token where
                2 -> do app    <- Bi.get
                        params <- Bi.get
                        return (AccessToken app params)
-               _ -> error "Consumer: parse error"
+               _ -> fail "Consumer: parse error"
 
 -- vim:sts=2:sw=2:ts=2:et

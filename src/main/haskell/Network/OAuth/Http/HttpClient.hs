@@ -33,9 +33,9 @@ module Network.OAuth.Http.HttpClient (HttpClient(..)
 
 import Network.Curl
 import Control.Monad.Fix
-import Control.Monad.Trans
 import Network.OAuth.Http.Request
 import Network.OAuth.Http.Response
+import Control.Monad.Trans
 import Data.Char (chr,ord)
 import qualified Data.ByteString.Lazy as B
 
@@ -44,10 +44,16 @@ class (Monad m) => HttpClient m where
   -- | Performs the request and returns the response wrapped into a given monad.
   request :: Request -> m Response
 
+  -- | Unpacks the monad and returns the inner IO monad.
+  unlift :: m a -> IO a
+
 -- | The libcurl backend
 newtype CurlM a = CurlM { unCurlM :: IO a }
   deriving (Monad,MonadIO,MonadFix,Functor)
+
 instance HttpClient CurlM where
+  unlift = unCurlM
+
   request req = CurlM $ withCurlDo $ do c <- initialize
                                         setopts c opts
                                         rsp <- perform_with_response_ c

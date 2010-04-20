@@ -30,11 +30,11 @@ module Network.OAuth.Http.PercentEncoding (PercentEncoding(..)
                                           ,decodeWithDefault
                                           ) where
 
-import Data.Monoid (mappend)
-import Data.List (splitAt)
+import Data.List (unfoldr)
 import qualified Codec.Binary.UTF8.String as U
-import Data.Char (intToDigit,digitToInt,toUpper,ord)
+import Data.Char (intToDigit,digitToInt,toUpper,ord,chr)
 import Data.Bits
+import Data.Word (Word8)
 
 class PercentEncoding a where
   -- | Encodes a type into its percent encoding representation.
@@ -45,37 +45,38 @@ class PercentEncoding a where
 
 -- | Encodes Char types using UTF\-8 charset.
 instance PercentEncoding Char where
-  encode c | c `elem` whitelist = [c]
-           | otherwise          = concatMap (run.fromIntegral) (U.encode [c])
-    where whitelist =    ['a'..'z'] 
-                      ++ ['A'..'Z']
-                      ++ ['0'..'9']
-                      ++ "-._~"
-          run b = '%' : map (toUpper.intToDigit) [shiftR (b .&. 0xF0) 4,b .&. 0x0F]
+  encode c = concatMap encode (U.encode [c])
 
-  decode xs = case (U.decode . tobytes $ xs)
-              of []     -> Nothing
-                 (y:_)  -> let sizeof = if ("%"==take 1 xs)
-                                        then length (encode y)
-                                        else 1
-                           in Just (y,drop sizeof xs)
-    where tobytes (b:bs) = case b 
-                           of '%' -> let ([c0,c1],bs') = splitAt 2 bs
-                                         b0            = (shiftL (digitToInt c0) 4) .&. 0xF0
-                                         b1            = (digitToInt c1) .&. 0x0F
-                                         byte          = fromIntegral (b0 .|. b1)
-                                     in byte : tobytes bs'
-                              _   -> fromIntegral (ord b) : tobytes bs
-          tobytes []     = []
+  decode [] = Nothing
+  decode (x:xs) = case (fmap (U.decode.fst) (decode (x:xs)))
+                  of Nothing    -> Nothing
+                     Just []    -> Nothing
+                     Just (y:_) | x=='%'    -> let sizeof = length (encode y) - 1
+                                               in Just (y,drop sizeof xs)
+                                | otherwise -> Just (y,xs)
 
--- | Add support for encoding strings
+instance PercentEncoding Word8 where
+  encode b | b `elem` whitelist = [chr.fromIntegral $ b]
+           | otherwise          = '%' : map (toUpper.intToDigit.fromIntegral) 
+                                            [shiftR (b .&. 0xF0) 4,b .&. 0x0F]
+    where whitelist =    [97..122]
+                      ++ [65..90]
+                      ++ [48..57]
+                      ++ [45,46,95,126]
+
+  decode []     = Nothing
+  decode (b:bs) = case b
+                  of '%' -> let ([c0,c1],bs') = splitAt 2 bs
+                                b0            = (shiftL (digitToInt c0) 4) .&. 0xF0
+                                b1            = (digitToInt c1) .&. 0x0F
+                                byte          = fromIntegral (b0 .|. b1)
+                            in Just (byte,bs')
+                     _   -> Just (fromIntegral (ord b),bs)
+
 instance (PercentEncoding a) => PercentEncoding [a] where
-  encode (x:xs) = encode x ++ encode xs
-  encode []     = []
-  
-  decode xs = do (c,ys) <- (decode xs)
-                 cs     <- fmap (fst) (decode ys `mappend` Just ([],""))
-                 return (c:cs,"")
+  encode = concatMap encode
+  decode = pack . unfoldr decode
+    where pack xs = Just (xs,"")
 
 -- | Decodes a percent encoded string. In case of failure returns a default value, instead of Nothing.
 decodeWithDefault :: (PercentEncoding a) => a -> String -> a

@@ -34,6 +34,12 @@ REFERENCES
 
 CHANGELOG
 =========
+v0_2_2
+  * Adding unlift function to HttpClient class
+  * Minor improvements on the documentation
+  * Word8 is now instance of PercentEncoding
+
+V0_2_1
 v0_2_0
   * Complete refactoring of the API:
     + The major change is that the API is now capable of performing HTTP requests, thus fully capable of dealing with the OAuth protocol;

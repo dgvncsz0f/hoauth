@@ -30,6 +30,7 @@ import qualified Test.HUnit as T
 import Network.OAuth.Http.PercentEncoding
 import Data.Char (isPrint)
 import Data.Maybe (fromJust)
+import System.Random (randomRIO)
 import qualified Data.ByteString.Lazy as B
 
 ftest0 = T.TestCase $ do
@@ -47,11 +48,12 @@ ftest1 = T.TestCase $ do
     (encode string)
 
 stest0 = T.TestCase $ do
-  let string = take 5000 $ filter isPrint [minBound .. maxBound]
+  let string   = filter isPrint [minBound .. maxBound]
+  dSize <- randomRIO (0,length string - 1000)
   T.assertEqual
     "test (decode . encode) == id"
-    (string)
-    (fst . fromJust . decode . encode $ string)
+    (take 1000 . drop dSize $ string)
+    (fst . fromJust . decode . encode . take 1000 . drop dSize $ string)
 
 fast_tests = [ftest0,ftest1]
 slow_tests = [stest0]
