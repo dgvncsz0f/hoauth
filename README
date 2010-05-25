@@ -34,6 +34,9 @@ REFERENCES
 
 CHANGELOG
 =========
+v0_2_3
+  * Exporting OAuthToken to the world
+
 v0_2_2
   * Adding unlift function to HttpClient class
   * Minor improvements on the documentation

@@ -26,7 +26,7 @@ configure:
 dist: build
 	$(CABAL) sdist
 
-.PHONY: unit-tests
+.PHONY: test
 test: 
 	$(RUNHASKELL) -i$(SRCROOT)/src/main/haskell -i$(SRCROOT)/src/test/haskell $(GHCFLAGS) $(SRCROOT)/src/test/haskell/Tests.hs
 

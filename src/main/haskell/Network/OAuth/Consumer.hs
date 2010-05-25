@@ -48,7 +48,7 @@
 --
 module Network.OAuth.Consumer (
                      -- * Types
-                     Token(application,oauthParams)
+                      Token(..)
                      ,Application(..)
                      ,OAuthCallback(..)
                      ,SigMethod(..)

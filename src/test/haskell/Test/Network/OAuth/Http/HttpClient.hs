@@ -33,7 +33,7 @@ import Network.OAuth.Http.Request
 import Data.Maybe (fromJust)
 
 stest0 = T.TestCase $ do
-  let CurlM ioresp = request (fromJust $ parseURL "http://projects.bitforest.org/hoauth/")
+  let CurlM ioresp = request (fromJust $ parseURL "http://github.com/dsouza/hoauth/")
 
   response <- ioresp
   T.assertEqual
@@ -48,7 +48,7 @@ stest0 = T.TestCase $ do
 
   T.assertEqual
     "Assert headers are set (content-type)"
-    (" text/html;charset=UTF-8")
+    (" text/html; charset=utf-8")
     (ifindWithDefault ("content-type","") (rspHeaders response))
 
   T.assertBool
@@ -56,7 +56,7 @@ stest0 = T.TestCase $ do
     (not $ null $ ifindWithDefault ("content-length","") (rspHeaders response))
 
 stest1 = T.TestCase $ do
-  let req          = fromJust $ parseURL "http://projects.bitforest.org/hoauth/"
+  let req          = fromJust $ parseURL "http://github.com/dsouza/hoauth/"
       CurlM ioresp = request (req {method = HEAD})
 
   response <- ioresp
@@ -72,7 +72,7 @@ stest1 = T.TestCase $ do
 
   T.assertEqual
     "Assert headers are set (content-type)"
-    (" text/html;charset=UTF-8")
+    (" text/html; charset=utf-8")
     (ifindWithDefault ("content-type","") (rspHeaders response))
 
 fast_tests = []
