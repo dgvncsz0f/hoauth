@@ -45,14 +45,14 @@ class (Monad m) => HttpClient m where
   request :: Request -> m Response
 
   -- | Unpacks the monad and returns the inner IO monad.
-  unlift :: m a -> IO a
+  unpack :: m a -> IO a
 
 -- | The libcurl backend
 newtype CurlM a = CurlM { unCurlM :: IO a }
   deriving (Monad,MonadIO,MonadFix,Functor)
 
 instance HttpClient CurlM where
-  unlift = unCurlM
+  unpack = unCurlM
 
   request req = CurlM $ withCurlDo $ do c <- initialize
                                         setopts c opts
