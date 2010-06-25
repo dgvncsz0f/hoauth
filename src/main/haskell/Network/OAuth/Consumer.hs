@@ -207,13 +207,13 @@ runOAuth = flip evalStateT (TwoLegg (Application "" "" OOB) empty)
 -- | Executes an oauth request which is intended to upgrade/refresh the current
 --   token. Use this combinator to get either a request token or an access
 --   token.
-oauthRequest :: (MonadIO m,HttpClient m) => SigMethod -> Maybe Realm -> Request -> OAuthMonad m (Either String Token)
+oauthRequest :: (MonadIO m,HttpClient m) => SigMethod -> Maybe Realm -> Request -> OAuthMonad m Token
 oauthRequest sigm realm req = do response <- serviceRequest sigm realm req
                                  token    <- get
                                  case (fromResponse response token)
-                                  of (Right token') -> do put token'
-                                                          return (Right token')
-                                     (Left err)     -> return (Left err)
+                                   of (Right token') -> do put token'
+                                                           return token'
+                                      (Left err)     -> fail err
 
 -- | Performs a signed request with the available token.
 serviceRequest :: (MonadIO m,HttpClient m) => SigMethod -> Maybe Realm -> Request -> OAuthMonad m Response
