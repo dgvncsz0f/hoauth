@@ -59,6 +59,7 @@ module Network.OAuth.Consumer (
                      -- * OAuthMonad related functions
                      ,runOAuth
                      ,oauthRequest
+                     ,completeRequest
                      ,serviceRequest
                      ,cliAskAuthorization
                      ,ignite
@@ -215,14 +216,18 @@ oauthRequest sigm realm req = do response <- serviceRequest sigm realm req
                                                            return token'
                                       (Left err)     -> fail err
 
+-- | Simply complete the request with the required information to perform the oauth request.
+completeRequest :: (MonadIO m) => SigMethod -> Token -> Maybe Realm -> Request -> m Request
+completeRequest sigm token realm req = do nonce     <- _nonce
+                                          timestamp <- _timestamp
+                                          let authValue = authorization sigm realm nonce timestamp token req
+                                          return (req {reqHeaders = insert ("Authorization",authValue) (reqHeaders req)})
+
 -- | Performs a signed request with the available token.
 serviceRequest :: (MonadIO m,HttpClient m) => SigMethod -> Maybe Realm -> Request -> OAuthMonad m Response
-serviceRequest sigm realm req = do nonce     <- _nonce
-                                   timestamp <- _timestamp
-                                   token     <- get
-                                   
-                                   let authValue = authorization sigm realm nonce timestamp token req
-                                   lift (request (req {reqHeaders = insert ("Authorization",authValue) (reqHeaders req)}))
+serviceRequest sigm realm req0 = do token <- get
+                                    req   <- completeRequest sigm token realm req0
+                                    lift (request req)
 
 -- | Extracts the token from the OAuthMonad.
 getToken :: (Monad m) => OAuthMonad m Token
