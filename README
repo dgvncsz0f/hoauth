@@ -34,6 +34,10 @@ REFERENCES
 
 CHANGELOG
 =========
+v0_2_4
+  * Adding completeRequest function
+  * Using fail instead of Either type in oauthRequest to signal failures
+
 v0_2_3
   * Exporting OAuthToken to the world
 
