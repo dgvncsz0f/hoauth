@@ -115,14 +115,14 @@ data Application = Application { consKey  :: String
 
 -- | The OAuth Token.
 data Token =   
-  {-| There is no valid token present, all requests go unauthenticated.
-   -}
+  {-| This token is used to perform 2 legged OAuth requests. -}
     TwoLegg {application :: Application 
             ,oauthParams :: FieldList
             }
-  {-| The service provider has granted you the request token but the user has
-      not yet authorized your application. If you use this token it will goes
-      as 2 legged OAuth.
+  {-| The service provider has granted you the request token but the
+      user has not yet authorized your application. You need to
+      exchange this token by a proper AccessToken, but this may only
+      happen after user has granted you permission to do so.
    -}
   | ReqToken {application :: Application
              ,oauthParams :: FieldList
