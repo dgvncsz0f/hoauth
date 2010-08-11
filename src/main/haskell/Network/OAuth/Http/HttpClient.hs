@@ -67,8 +67,6 @@ instance HttpClient CurlM where
           
           curlMethod = case (method req)
                        of GET   -> [CurlHttpGet True]
-                          POST  -> [CurlPost True]
-                          PUT   -> [CurlPut True]
                           HEAD  -> [CurlNoBody True,CurlCustomRequest "HEAD"]
                           other -> if (B.null.reqPayload $ req)
                                    then [CurlHttpGet True,CurlCustomRequest (show other)]
@@ -77,9 +75,8 @@ instance HttpClient CurlM where
                          then []
                          else [CurlPostFields [map (chr.fromIntegral).B.unpack.reqPayload $ req]]
           curlHeaders = let headers = (map (\(k,v) -> k++": "++v).toList.reqHeaders $ req)
-                        in [CurlHttpHeaders $"Expect: " 
-                                            :("Content-Length: " ++ (show.B.length.reqPayload $ req))
-                                            :headers
+                        in [CurlHttpHeaders $ ("Content-Length: " ++ (show.B.length.reqPayload $ req))
+                                              : headers
                            ]
 
           opts = [CurlURL (showURL req)
