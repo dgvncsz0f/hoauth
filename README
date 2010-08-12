@@ -34,6 +34,9 @@ REFERENCES
 
 CHANGELOG
 =========
+v0_2_5
+  * bugfix: freezing when doing PUT or POST requests
+
 v0_2_4
   * Adding completeRequest function
   * Using fail instead of Either type in oauthRequest to signal failures
