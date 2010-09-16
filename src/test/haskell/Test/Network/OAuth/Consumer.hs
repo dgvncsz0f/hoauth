@@ -31,7 +31,7 @@ import Control.Monad.Fix
 import Control.Monad.Trans
 import Data.Maybe
 import Data.List
-import Data.Char (ord)
+import Data.Char (ord,chr)
 import Network.OAuth.Consumer
 import Network.OAuth.Http.Request
 import Network.OAuth.Http.Response
@@ -87,28 +87,43 @@ ftest2 = T.TestCase $ do
   let app     = Application "foo" "bar" OOB
       payload = B.pack . map (fromIntegral.ord) $ "oauth_token_secret=foobar&oauth_callback_confirmed=true"
       message = "missing required keys"
+      errorMsg = unlines [ "status: 200"
+                         , "statusLine: " ++ message
+                         , "headers: []"
+                         , "payload: " ++ map (chr . fromIntegral) (B.unpack payload)
+                         ]
 
   T.assertBool
     "test response without oauth_token do nothing"
-    ((Left message) == (fromResponse (RspHttp 200 message empty payload) (fromApplication app)))
+    ((Left errorMsg) == (fromResponse (RspHttp 200 message empty payload) (fromApplication app)))
   
 ftest3 = T.TestCase $ do
   let app     = Application "foo" "bar" OOB
       payload = B.pack . map (fromIntegral.ord) $ "oauth_token=foobar&oauth_callback_confirmed=true"
       message = "missing required keys"
+      errorMsg = unlines [ "status: 200"
+                         , "statusLine: " ++ message
+                         , "headers: []"
+                         , "payload: " ++ map (chr . fromIntegral) (B.unpack payload)
+                         ]
 
   T.assertBool
     "test response without oauth_token_secret do nothing"
-    ((Left message) == (fromResponse (RspHttp 200 message empty payload) (fromApplication app)))
+    ((Left errorMsg) == (fromResponse (RspHttp 200 message empty payload) (fromApplication app)))
 
 ftest4 = T.TestCase $ do
-  let app     = Application "foo" "bar" OOB
-      payload = B.pack . map (fromIntegral.ord) $ "oauth_token=foobar&oauth_token_secret=true"
-      message = "missing required keys"
+  let app      = Application "foo" "bar" OOB
+      payload  = B.pack . map (fromIntegral.ord) $ "oauth_token=foobar&oauth_token_secret=true"
+      message  = "missing required keys"
+      errorMsg = unlines [ "status: 200"
+                         , "statusLine: " ++ message
+                         , "headers: []"
+                         , "payload: " ++ map (chr . fromIntegral) (B.unpack payload)
+                         ]
 
   T.assertBool
     "test response without oauth_callback_confirmed do nothing"
-    ((Left message) == (fromResponse (RspHttp 200 message empty payload) (fromApplication app)))
+    ((Left errorMsg) == (fromResponse (RspHttp 200 message empty payload) (fromApplication app)))
 
 ftest5 = T.TestCase $ do
   let app      = Application "foo" "bar" OOB

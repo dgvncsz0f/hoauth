@@ -91,6 +91,7 @@ import Data.Word (Word8)
 import qualified Data.Digest.Pure.SHA as S
 import qualified Codec.Binary.Base64 as B64
 import qualified Data.ByteString.Lazy as B
+import qualified Codec.Binary.UTF8.String as U
 
 -- | Random string that is unique amongst requests. Refer to <http://oauth.net/core/1.0/#nonce> for more information.
 type Nonce = String
@@ -262,7 +263,7 @@ fromResponse rsp token | validRsp =  case (token)
                                      of (TwoLegg app params)     -> Right $ ReqToken app (payload `union` params)
                                         (ReqToken app params)    -> Right $ AccessToken app (payload `union` params)
                                         (AccessToken app params) -> Right $ AccessToken app (payload `union` params)
-                       | otherwise = Left (statusLine rsp)
+                       | otherwise = Left errorMessage
   where payload = parseQString . map (chr.fromIntegral) . B.unpack . rspPayload $ rsp
 
         validRsp = statusOk && paramsOk
@@ -279,6 +280,12 @@ fromResponse rsp token | validRsp =  case (token)
                           _             -> ["oauth_token"
                                            ,"oauth_token_secret"
                                            ]
+
+        errorMessage = unlines [ "status: " ++ show (status rsp)
+                               , "statusLine: " ++ statusLine rsp
+                               , "headers: " ++ show (toList $ rspHeaders rsp)
+                               , "payload: " ++ U.decode (B.unpack $ rspPayload rsp)
+                               ]
 
 -- | Computes the authorization header and updates the request.
 authorization :: SigMethod -> Maybe Realm -> Nonce -> Timestamp -> Token -> Request -> String
