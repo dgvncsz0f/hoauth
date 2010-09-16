@@ -44,4 +44,3 @@ data Response = RspHttp {status     :: Int           -- ^ The status code (e.g. 
 --                   (type_,params) = break (==';') string
 --               in (trim type_,trim charset)
 
--- vim:sts=2:sw=2:ts=2:et

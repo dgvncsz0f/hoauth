@@ -41,4 +41,3 @@ main = all_tests >>= exitWith . exitStatus
   where exitStatus stats | T.errors stats + T.failures stats > 0 = ExitFailure 1
                          | otherwise                             = ExitSuccess
 
--- vim:sts=2:sw=2:ts=2:et

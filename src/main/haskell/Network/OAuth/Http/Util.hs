@@ -32,4 +32,3 @@ splitBy = split (id)
                              | otherwise = split (accum . (x:)) p xs
         split accum _ []                 = [accum []]
 
--- vim:sts=2:sw=2:ts=2:et

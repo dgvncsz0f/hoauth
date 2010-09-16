@@ -322,4 +322,3 @@ instance Bi.Binary FieldList where
   put = Bi.put . unFieldList
   get = fmap FieldList Bi.get
 
--- vim:sts=2:sw=2:ts=2:et

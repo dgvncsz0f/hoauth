@@ -84,4 +84,3 @@ decodeWithDefault def str = case (decode str)
                             of Just (v,"") -> v
                                _           -> def
 
--- vim:sts=2:sw=2:ts=2:et

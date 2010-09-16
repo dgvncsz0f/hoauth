@@ -58,4 +58,3 @@ stest0 = T.TestCase $ do
 fast_tests = [ftest0,ftest1]
 slow_tests = [stest0]
 
--- vim:sts=2:sw=2:ts=2:et

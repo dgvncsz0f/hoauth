@@ -373,4 +373,3 @@ instance Bi.Binary Token where
                        return (AccessToken app params)
                _ -> fail "Consumer: parse error"
 
--- vim:sts=2:sw=2:ts=2:et
