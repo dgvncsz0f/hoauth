@@ -39,6 +39,7 @@ import Network.OAuth.Http.CurlHttpClient
 import Network.OAuth.Http.PercentEncoding
 import qualified Data.ByteString.Lazy as B
 import qualified Data.Binary as Bi
+import qualified Codec.Crypto.RSA as R
 
 ftest0 = T.TestCase $ do
   let token     = fromApplication $ Application "dpf43f3p2l4k3l03" "kd94hf93k423kf44" (URL "http://printer.example.com/request_token_ready")
@@ -250,57 +251,6 @@ ftest11 = T.TestCase $ do
     "test decode . encode = id (Binary) [Application]"
     (app1 == (Bi.decode . Bi.encode $ app1))
 
--- test0 = T.TestCase $ do
---   T.assertEqual
---     "test sign_request (PLAINTEXT)"
---     "djr9rjt0jd78jf88&jjd999tj88uiths3"
---     (S.sign (S.PLAINTEXT "djr9rjt0jd78jf88" (Just "jjd999tj88uiths3")) undefined)
--- 
---   T.assertEqual
---     "test sign_request (PLAINTEXT)"
---     "djr9rjt0jd78jf88&jjd99$tj88uiths3"
---     (S.sign (S.PLAINTEXT "djr9rjt0jd78jf88" (Just "jjd99$tj88uiths3")) undefined)
---   
---   T.assertEqual
---     "test sign_request (PLAINTEXT)"
---     "djr9rjt0jd78jf88&"
---     (S.sign (S.PLAINTEXT "djr9rjt0jd78jf88" Nothing) undefined)
--- 
--- test1 = T.TestCase $ do
---   T.assertEqual
---     "test show (PLAINTEXT)"
---     "PLAINTEXT"
---     (show (S.PLAINTEXT undefined undefined))
--- 
--- test2 = T.TestCase $ do
---   T.assertEqual
---     "test show (HMAC_SHA1)"
---     "HMAC-SHA1"
---     (show (S.HMAC_SHA1 undefined undefined))
--- 
--- test3 = T.TestCase $ do
---   T.assertEqual
---     "test sign_request (HMAC-SHA1)"
---     ("hPgZ39p8jXC9ZvIO73YU8ZGs2p4=") -- key:foo&bar msg:GET&http%3A%2F%2Ffoo.bar%3A8080%2Ffoobar&bar%3Dfoo%26foo%3Dbar
---     (S.sign (S.HMAC_SHA1 "foo" (Just "bar")) (R.HTTP False R.GET "foo.bar" 8080 "/foobar" [("foo",Just "bar"),("bar",Just "foo")]))
--- 
--- test4 = T.TestCase $ do
---   T.assertEqual
---     "test sign_request (HMAC-SHA1) ignores default port (http,80)"
---     ("b6ZqclCmwf+mbOd8oIvJKS1INhk=") -- key:foo&bar msg:PUT&http%3A%2F%2Ffoo.bar%2Ffoobar&bar%3Dfoo%26foo%3Dbar
---     (S.sign (S.HMAC_SHA1 "foo" (Just "bar")) (R.HTTP False R.PUT "foo.bar" 80 "/foobar" [("foo",Just "bar"),("bar",Just "foo")]))
--- 
---   T.assertEqual
---     "test sign_request (HMAC-SHA1) ignores default port (https,443)"
---     ("M6ZGvQPuGgjDR4T/pVYI/ivgg+I=") -- key:foo&bar msg:DELETE&https%3A%2F%2Ffoo.bar%2Ffoobar&bar%3Dfoo%26foo%3Dbar
---     (S.sign (S.HMAC_SHA1 "foo" (Just "bar")) (R.HTTP True R.DELETE "foo.bar" 443 "/foobar" [("foo",Just "bar"),("bar",Just "foo")]))
--- 
--- test5 = T.TestCase $ do
---   T.assertEqual
---     "test show (RSA_SHA1)"
---     "RSA-SHA1"
---     (show (S.RSA_SHA1 undefined))
--- 
 -- to generate the test data to the following tests:
 -- $ openssl genrsa -out rsa -in 1024 
 -- $ openssl rsa -text -in rsa # copy modulus and privateExponent
@@ -321,30 +271,33 @@ ftest11 = T.TestCase $ do
 -- ZnoAYyGR8hlK9gwQyUkCQCkk+FG2ziItInzwwLJfUeHaSMa3o8W39l8hVbFOyLRE
 -- IEhf7DCGXGJril4U3uyoP7kCzsqIKE2WZ9SRlLwccDs=
 -- -----END RSA PRIVATE KEY-----
--- test6 = T.TestCase $ do
---   let modulus  = 0x00ce3fe6af65b85d7744a287268f0aea4fd783005b6306f353e9e49a9583f7d4ebc7870a65fc30ccdd5ce7a84b8d5a9356f06ae3d00599e5c8bda3b543f4331ccf04fd931e108d75e4abea9c120f46fe735138c31344e4b74a1788edf161d9c2ac6f8cc993927fcab4ef956b7150278daed0d2d630413a5ad56658026a3bcb3ced
---       expoent  = 0x17e54d6bdae42e68081ab07fe628c496f58826fd6f8eb9986a4be321198618342d0cd746939e6fcde1dab123f7bf9bbc81e4507aa47b7d24f1dbcabf91c66e3ad490605bcc36a8568bce27dc9d1584dc3e443499f819dc0a9d2b0233f5ae6d8ab8435121c811ffc7a5491718479d246d52f27172e5903f66814431186ec607e1
---       numbytes = 128
---       key      = R1.PrivateKey numbytes modulus expoent
---   T.assertEqual
---     "test sign_request (RSA-SHA1)"
---     ("JUIS4p4Qgcw7r/6HdplUSZSx2YHLfB/Va6736VbBQSBdk/F1NK0YvQtaRoY67aXv\nyXrwZGajC4BdHSe53HB7cIBhqdwKmnFqZZw9Bc2yMeoINZqDOctUIXgP0qpc3vfl\nACW1SFQARKUTTKxvmWNPApWPsS44eRZOedjIr25waF0=")
---     (S.sign (S.RSA_SHA1 key) (R.HTTP False R.GET "foo.bar" 8080 "/foobar" [("foo",Just "bar"),("bar",Just "foo")]))
--- 
--- test7 = T.TestCase $ do
---   let modulus  = 0x00ce3fe6af65b85d7744a287268f0aea4fd783005b6306f353e9e49a9583f7d4ebc7870a65fc30ccdd5ce7a84b8d5a9356f06ae3d00599e5c8bda3b543f4331ccf04fd931e108d75e4abea9c120f46fe735138c31344e4b74a1788edf161d9c2ac6f8cc993927fcab4ef956b7150278daed0d2d630413a5ad56658026a3bcb3ced
---       expoent  = 0x17e54d6bdae42e68081ab07fe628c496f58826fd6f8eb9986a4be321198618342d0cd746939e6fcde1dab123f7bf9bbc81e4507aa47b7d24f1dbcabf91c66e3ad490605bcc36a8568bce27dc9d1584dc3e443499f819dc0a9d2b0233f5ae6d8ab8435121c811ffc7a5491718479d246d52f27172e5903f66814431186ec607e1
---       numbytes = 128
---       key      = R1.PrivateKey numbytes modulus expoent
---   T.assertEqual
---     "test sign_request (RSA-SHA1) ignores default port (http,80)"
---     ("wspZGQBp1Gv0guYxVYTVllAtasGa9AaSAGcraB15Chgv0MXs4lSt/PPY41WGdQzT\n3K3D8l2veBeJEqEka63vSJNnDyMPb38oTJrRyn1TvaZzXq4Oyp2y6lgmxL9x4xOr\nLLGBIMQ8T2gWL+eQJ7FeqTL83MdMqUulyJfxc9PeObA=") -- msg:PUT&http%3A%2F%2Ffoo.bar%2Ffoobar&bar%3Dfoo%26foo%3Dbar
---     (S.sign (S.RSA_SHA1 key) (R.HTTP False R.PUT "foo.bar" 80 "/foobar" [("foo",Just "bar"),("bar",Just "foo")]))
--- 
---   T.assertEqual
---     "test sign_request (RSA-SHA1) ignores default port (https,443)"
---     ("AjwVGN2wkvDjb/bGDqMtAzwn9hhx3nCH2GIR+puXim4qMk1Qy7aJCDrDyBNPgzET\n/4lr3bwPSK0UaBO4iyp5e4Zv5BGp0VWkP7clQZaqR56/zKpcgvKav9Ge7tM02dR0\nXoODfSBk94ckyotTp1F4cmF4bEe1mHlsabWbJXQq29k=") -- msg:DELETE&https%3A%2F%2Ffoo.bar%2Ffoobar&bar%3Dfoo%26foo%3Dbar
---     (S.sign (S.RSA_SHA1 key) (R.HTTP True R.DELETE "foo.bar" 443 "/foobar" [("foo",Just "bar"),("bar",Just "foo")]))
+ftest12 = T.TestCase $ do
+  let modulus  = 0x00ce3fe6af65b85d7744a287268f0aea4fd783005b6306f353e9e49a9583f7d4ebc7870a65fc30ccdd5ce7a84b8d5a9356f06ae3d00599e5c8bda3b543f4331ccf04fd931e108d75e4abea9c120f46fe735138c31344e4b74a1788edf161d9c2ac6f8cc993927fcab4ef956b7150278daed0d2d630413a5ad56658026a3bcb3ced
+      expoent  = 0x17e54d6bdae42e68081ab07fe628c496f58826fd6f8eb9986a4be321198618342d0cd746939e6fcde1dab123f7bf9bbc81e4507aa47b7d24f1dbcabf91c66e3ad490605bcc36a8568bce27dc9d1584dc3e443499f819dc0a9d2b0233f5ae6d8ab8435121c811ffc7a5491718479d246d52f27172e5903f66814431186ec607e1
+      numbytes = 128
+      key      = R.PrivateKey numbytes modulus expoent
+      Just req = parseURL "http://foo.bar:8080/foobar?foo=bar&bar=foo"
+  T.assertEqual
+    "test sign_request (RSA-SHA1)"
+    ("JUIS4p4Qgcw7r/6HdplUSZSx2YHLfB/Va6736VbBQSBdk/F1NK0YvQtaRoY67aXvyXrwZGajC4BdHSe53HB7cIBhqdwKmnFqZZw9Bc2yMeoINZqDOctUIXgP0qpc3vflACW1SFQARKUTTKxvmWNPApWPsS44eRZOedjIr25waF0=")
+    (signature (RSASHA1 key) NoToken req)
+
+ftest13 = T.TestCase $ do
+  let modulus   = 0x00ce3fe6af65b85d7744a287268f0aea4fd783005b6306f353e9e49a9583f7d4ebc7870a65fc30ccdd5ce7a84b8d5a9356f06ae3d00599e5c8bda3b543f4331ccf04fd931e108d75e4abea9c120f46fe735138c31344e4b74a1788edf161d9c2ac6f8cc993927fcab4ef956b7150278daed0d2d630413a5ad56658026a3bcb3ced
+      expoent   = 0x17e54d6bdae42e68081ab07fe628c496f58826fd6f8eb9986a4be321198618342d0cd746939e6fcde1dab123f7bf9bbc81e4507aa47b7d24f1dbcabf91c66e3ad490605bcc36a8568bce27dc9d1584dc3e443499f819dc0a9d2b0233f5ae6d8ab8435121c811ffc7a5491718479d246d52f27172e5903f66814431186ec607e1
+      numbytes  = 128
+      key       = R.PrivateKey numbytes modulus expoent
+      Just req0 = parseURL "http://foo.bar:80/foobar?foo=bar&bar=foo"
+      Just req1 = parseURL "https://foo.bar:443/foobar?foo=bar&bar=foo"
+  T.assertEqual
+    "test sign_request (RSA-SHA1) ignores default port (http,80)"
+    ("wspZGQBp1Gv0guYxVYTVllAtasGa9AaSAGcraB15Chgv0MXs4lSt/PPY41WGdQzT3K3D8l2veBeJEqEka63vSJNnDyMPb38oTJrRyn1TvaZzXq4Oyp2y6lgmxL9x4xOrLLGBIMQ8T2gWL+eQJ7FeqTL83MdMqUulyJfxc9PeObA=") -- msg:PUT&http%3A%2F%2Ffoo.bar%2Ffoobar&bar%3Dfoo%26foo%3Dbar
+    (signature (RSASHA1 key) NoToken (req0 { method = PUT }))
+
+  T.assertEqual
+    "test sign_request (RSA-SHA1) ignores default port (https,443)"
+    ("AjwVGN2wkvDjb/bGDqMtAzwn9hhx3nCH2GIR+puXim4qMk1Qy7aJCDrDyBNPgzET/4lr3bwPSK0UaBO4iyp5e4Zv5BGp0VWkP7clQZaqR56/zKpcgvKav9Ge7tM02dR0XoODfSBk94ckyotTp1F4cmF4bEe1mHlsabWbJXQq29k=") -- msg:DELETE&https%3A%2F%2Ffoo.bar%2Ffoobar&bar%3Dfoo%26foo%3Dbar
+    (signature (RSASHA1 key) NoToken (req1 { method = DELETE }))
 
 stest0 = T.TestCase $ do
   let app          = Application "dj0yJmk9WjN6WTBncG5BMTlOJmQ9WVdrOVdWcE1WRTAwTldrbWNHbzlOakUxT1RJM01UUTMmcz1jb25zdW1lcnNlY3JldCZ4PWY4" "02a8b7e40e348a0f2025dd1d3c627f7a1e60e844" OOB
@@ -359,6 +312,6 @@ stest0 = T.TestCase $ do
     (200)
     (status response)
 
-fast_tests = [ftest0,ftest1,ftest2,ftest3,ftest4,ftest5,ftest6,ftest7,ftest8,ftest9,ftest10,ftest11]
+fast_tests = [ftest0,ftest1,ftest2,ftest3,ftest4,ftest5,ftest6,ftest7,ftest8,ftest9,ftest10,ftest11,ftest12,ftest13]
 slow_tests = [stest0]
 

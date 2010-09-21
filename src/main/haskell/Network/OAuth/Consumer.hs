@@ -101,6 +101,7 @@ import qualified Data.Binary as Bi
 import qualified Data.Digest.Pure.SHA as S
 import qualified Codec.Binary.Base64 as B64
 import qualified Data.ByteString.Lazy as B
+import qualified Codec.Crypto.RSA as R
 
 -- | A request that is ready to be performed, i.e., that contains authorization headers.
 newtype OAuthRequest = OAuthRequest { unpackRq :: Request }
@@ -171,7 +172,14 @@ data SigMethod =
       by an /&/ character (ASCII code 38) even if empty.
   -}
   | HMACSHA1
-  deriving (Eq)
+  {-| The "RSA-SHA1" signature method uses the RSASSA-PKCS1-v1_5 signature
+      algorithm as defined in [RFC3447], Section 8.2 (also known as
+      PKCS#1), using SHA-1 as the hash function for EMSA-PKCS1-v1_5.  To
+      use this method, the client MUST have established client credentials
+      with the server that included its RSA public key (in a manner that is
+      beyond the scope of this specification).
+  -}
+  | RSASHA1 R.PrivateKey
 
 data OAuthMonadT m a = OAuthMonadT (Token -> m (Either String (Token,a)))
 
@@ -181,6 +189,8 @@ signature :: SigMethod -> Token -> Request -> String
 signature m token req = case m
                         of PLAINTEXT -> key
                            HMACSHA1  -> b64encode $ S.bytestringDigest (S.hmacSha1 (bsencode key) (bsencode text))
+                           RSASHA1 k -> b64encode $ R.rsassa_pkcs1_v1_5_sign R.ha_SHA1 k (bsencode text)
+
   where bsencode  = B.pack . map (fromIntegral.ord)
         b64encode = B64.encode . B.unpack
 
@@ -350,9 +360,13 @@ authorization m realm nonce time token req = oauthPrefix ++ enquote (("oauth_sig
   where oauthFields = [ ("oauth_consumer_key", consKey.application $ token)
                       , ("oauth_nonce", unNonce nonce)
                       , ("oauth_timestamp", unTimestamp time)
-                      , ("oauth_signature_method", show m)
+                      , ("oauth_signature_method", showMethod m)
                       , ("oauth_version", "1.0")
                       ] ++ extra
+        
+        showMethod HMACSHA1    = "HMAC-SHA1"
+        showMethod (RSASHA1 _) = "RSA-SHA1"
+        showMethod PLAINTEXT   = "PLAINTEXT"
 
         oauthPrefix = case realm
                       of Nothing -> "OAuth "
@@ -405,10 +419,6 @@ instance (Monad m,Functor m) => Functor (OAuthMonadT m) where
   fmap f (OAuthMonadT ma) = OAuthMonadT $ \t0 -> ma t0 >>= either left right
     where left = return . Left
           right (t1,a) = return (Right (t1, f a))
-
-instance Show SigMethod where
-  showsPrec _ PLAINTEXT = showString "PLAINTEXT"
-  showsPrec _ HMACSHA1  = showString "HMAC-SHA1"
 
 instance Show OAuthCallback where
   showsPrec _ OOB     = showString "oob"
