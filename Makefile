@@ -5,7 +5,8 @@ FIND    = find
 HC      = ghc
 HPC     = hpc
 
-HCFLAGS =
+HCFLAGS    =
+CABALFLAGS = 
 
 MAIN_SRC  = $(foreach d,$(shell $(FIND) src/main/haskell/Network -type d),$(wildcard $(d)/*.hs))
 TEST_HOAUTH = dist/bin/test_hoauth
@@ -16,7 +17,11 @@ default: compile
 
 .PHONY: dist
 dist:
-	$(CABAL) configure && $(CABAL) sdist
+	$(CABAL) configure && $(CABAL) $(CABALFLAGS) sdist
+
+.PHONY: doc
+doc:
+	$(CABAL) configure && $(CABAL) $(CABALFLAGS) haddock
 
 .PHONY: default
 default: compile
