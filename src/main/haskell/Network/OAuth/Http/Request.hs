@@ -27,35 +27,35 @@
 -- OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 
 -- | The request currently is only able to represent an HTTP request.
-module Network.OAuth.Http.Request (
-                                  -- * Types
-                                   Request(..)
-                                  ,FieldList()
-                                  ,Version(..)
-                                  ,Method(..)
-                                  -- * FieldList related functions
-                                  ,fromList
-                                  ,singleton
-                                  ,empty
-                                  ,toList
-                                  ,parseQString
-                                  ,find
-                                  ,findWithDefault
-                                  ,ifindWithDefault
-                                  ,change
-                                  ,insert
-                                  ,replace
-                                  ,replaces
-                                  ,union
-                                  ,unionAll
-                                  -- * Request related functions
-                                  ,showURL
-                                  ,showQString
-                                  ,showProtocol
-                                  ,showAuthority
-                                  ,showPath
-                                  ,parseURL
-                                  ) where
+module Network.OAuth.Http.Request 
+       ( -- * Types
+         Request(..)
+       , FieldList()
+       , Version(..)
+       , Method(..)
+         -- * FieldList related functions
+       , fromList
+       , singleton
+       , empty
+       , toList
+       , parseQString
+       , find
+       , findWithDefault
+       , ifindWithDefault
+       , change
+       , insert
+       , replace
+       , replaces
+       , union
+       , unionAll
+         -- * Request related functions
+       , showURL
+       , showQString
+       , showProtocol
+       , showAuthority
+       , showPath
+       , parseURL
+       ) where
 
 import Control.Monad.State
 import Network.OAuth.Http.PercentEncoding
@@ -82,32 +82,34 @@ data Version =   Http10
   deriving (Eq)
 
 -- | Key-value list.
-newtype FieldList = FieldList {unFieldList :: [(String,String)]}
+newtype FieldList = FieldList { unFieldList :: [(String,String)] }
   deriving (Eq,Ord)
 
-data Request = ReqHttp {version    :: Version      -- ^ Protocol version
-                       ,ssl        :: Bool         -- ^ Wheter or not to use ssl
-                       ,host       :: String       -- ^ The hostname to connect to
-                       ,port       :: Int          -- ^ The port to connect to
-                       ,method     :: Method       -- ^ The HTTP method of the request.
-                       ,reqHeaders :: FieldList    -- ^ Request headers
-                       ,pathComps  :: [String]     -- ^ The path split into components 
-                       ,qString    :: FieldList    -- ^ The query string, usually set for GET requests
-                       ,reqPayload :: B.ByteString -- ^ The message body
+data Request = ReqHttp { version    :: Version      -- ^ Protocol version
+                       , ssl        :: Bool         -- ^ Wheter or not to use ssl
+                       , host       :: String       -- ^ The hostname to connect to
+                       , port       :: Int          -- ^ The port to connect to
+                       , method     :: Method       -- ^ The HTTP method of the request.
+                       , reqHeaders :: FieldList    -- ^ Request headers
+                       , pathComps  :: [String]     -- ^ The path split into components 
+                       , qString    :: FieldList    -- ^ The query string, usually set for GET requests
+                       , reqPayload :: B.ByteString -- ^ The message body
                        }
   deriving (Eq,Show)
 
 -- | Show the protocol in use (currently either https or http)
 showProtocol :: Request -> String
-showProtocol req | ssl req   = "https"
-                 | otherwise = "http"
+showProtocol req 
+  | ssl req   = "https"
+  | otherwise = "http"
 
 -- | Show the host+port path of the request. May return only the host when
 --   (ssl=False && port==80) or (ssl=True && port==443).
 showAuthority :: Request -> String
-showAuthority req | ssl req && (port req)==443      = host req
-                  | not (ssl req) && (port req)==80 = host req
-                  | otherwise                       = host req ++":"++ show (port req)
+showAuthority req 
+  | ssl req && (port req)==443      = host req
+  | not (ssl req) && (port req)==80 = host req
+  | otherwise                       = host req ++":"++ show (port req)
 
 -- | Show the path component of the URL.
 showPath :: Request -> String
@@ -123,53 +125,56 @@ showURL =   concat
           . zipWith ($) [showProtocol,const "://",showAuthority,showPath,showQString'] 
           . repeat
   where showQString' :: Request -> String
-        showQString' req | null (unFieldList (qString req)) = ""
-                         | otherwise                        = '?' : showQString req
+        showQString' req 
+          | null (unFieldList (qString req)) = ""
+          | otherwise                        = '?' : showQString req
 
 -- | Parse a URL and creates an request type.
 parseURL :: String -> Maybe Request
 parseURL tape = evalState parser (tape,Just initial)
-  where parser = do _parseProtocol
-                    _parseSymbol (':',True)
-                    _parseSymbol ('/',True)
-                    _parseSymbol ('/',True)
-                    _parseHost
-                    _parseSymbol (':',False)
-                    _parsePort
-                    _parseSymbol ('/',True)
-                    _parsePath
-                    _parseSymbol ('?',False)
-                    _parseQString
-                    fmap snd get
-        initial = ReqHttp {version    = Http11
-                          ,ssl        = False
-                          ,method     = GET
-                          ,host       = "127.0.0.1"
-                          ,port       = 80
-                          ,reqHeaders = fromList []
-                          ,pathComps  = []
-                          ,qString    = fromList []
-                          ,reqPayload = B.empty
+  where parser = do { _parseProtocol
+                    ; _parseSymbol (':',True)
+                    ; _parseSymbol ('/',True)
+                    ; _parseSymbol ('/',True)
+                    ; _parseHost
+                    ; _parseSymbol (':',False)
+                    ; _parsePort
+                    ; _parseSymbol ('/',True)
+                    ; _parsePath
+                    ; _parseSymbol ('?',False)
+                    ; _parseQString
+                    ; fmap snd get
+                    }
+        initial = ReqHttp { version    = Http11
+                          , ssl        = False
+                          , method     = GET
+                          , host       = "127.0.0.1"
+                          , port       = 80
+                          , reqHeaders = fromList []
+                          , pathComps  = []
+                          , qString    = fromList []
+                          , reqPayload = B.empty
                           }
 
 -- | Parse a query string.
 parseQString :: String -> FieldList
 parseQString tape = evalState parser (tape,Just initial)
-  where parser = do _parseQString
-                    (fmap (qstring . snd) get)
+  where parser = do { _parseQString
+                    ; fmap (qstring . snd) get
+                    }
 
         qstring Nothing  = fromList []
         qstring (Just r) = qString r
 
-        initial = ReqHttp {version    = Http11
-                          ,ssl        = False
-                          ,method     = GET
-                          ,host       = "127.0.0.1"
-                          ,port       = 80
-                          ,reqHeaders = fromList []
-                          ,pathComps  = []
-                          ,qString    = fromList []
-                          ,reqPayload = B.empty
+        initial = ReqHttp { version    = Http11
+                          , ssl        = False
+                          , method     = GET
+                          , host       = "127.0.0.1"
+                          , port       = 80
+                          , reqHeaders = fromList []
+                          , pathComps  = []
+                          , qString    = fromList []
+                          , reqPayload = B.empty
                           }
 
 -- | Creates a FieldList type from a list.
@@ -192,9 +197,10 @@ empty = fromList []
 --   the values does not exist.
 change :: (String,String) -> FieldList -> FieldList
 change kv (FieldList list) = FieldList (change' kv list)
-  where change' (k,v) ((k0,v0):fs) | k0==k     = (k0,v) : change' (k,v) fs
-                                   | otherwise = (k0,v0) : change' (k,v) fs
-        change' _ []                           = []
+  where change' (k,v) ((k0,v0):fs) 
+          | k0==k     = (k0,v) : change' (k,v) fs
+          | otherwise = (k0,v0) : change' (k,v) fs
+        change' _ []  = []
 
 -- | Inserts a new value into a fieldlist.
 insert :: (String,String) -> FieldList -> FieldList
@@ -202,8 +208,9 @@ insert kv = mappend (FieldList [kv])
 
 -- | Inserts or updates occurrences of a given key.
 replace :: (String,String) -> FieldList -> FieldList
-replace (k,v) fs | null $ find (==k) fs = insert (k,v) fs
-                 | otherwise            = change (k,v) fs
+replace (k,v) fs 
+  | null $ find (==k) fs = insert (k,v) fs
+  | otherwise            = change (k,v) fs
 
 -- | Same as /replace/ but work on a list type
 replaces :: [(String,String)] -> FieldList -> FieldList
@@ -225,60 +232,68 @@ unionAll (FieldList as) bs = foldr insert bs as
 -- the event there are multiple values under the same key the first one is
 -- returned.
 findWithDefault :: (String,String) -> FieldList -> String
-findWithDefault (key,def) fields | null values = def
-                                 | otherwise   = head values
-  where values = find (==key) fields
+findWithDefault (key,def) fields 
+  | null values = def
+  | otherwise   = head values
+    where values = find (==key) fields
 
 -- | Same as <findWithDefault> but the match is case-insenstiive.
 ifindWithDefault :: (String,String) -> FieldList -> String
-ifindWithDefault (key,def) fields | null values = def
-                                  | otherwise   = head values
-  where values = find (\k -> lower k == lower key) fields
-        lower  = map toLower
+ifindWithDefault (key,def) fields 
+  | null values = def
+  | otherwise   = head values
+    where values = find (\k -> lower k == lower key) fields
+          lower  = map toLower
 
 _parseProtocol :: State (String,Maybe Request) ()
-_parseProtocol = get >>= \(tape,req) ->
-                 if ("https" `isPrefixOf` tape)
-                 then put (drop 5 tape,liftM (\r -> r {ssl=True,port=443}) req)
-                 else if ("http" `isPrefixOf` tape) 
-                      then put (drop 4 tape,liftM (\r -> r {ssl=False,port=80}) req)
-                      else put ("",Nothing)
+_parseProtocol = do { (tape,req) <- get
+                    ; if ("https" `isPrefixOf` tape)
+                      then put (drop 5 tape,liftM (\r -> r {ssl=True,port=443}) req)
+                      else if ("http" `isPrefixOf` tape) 
+                           then put (drop 4 tape,liftM (\r -> r {ssl=False,port=80}) req)
+                           else put ("",Nothing)
+                    }
 
 _parseHost :: State (String,Maybe Request) ()
-_parseHost = get >>= \(tape,req) ->
-             let (value,tape') = break (`elem` ":/") tape
-             in put (tape',liftM (\r -> r {host = value}) req)
+_parseHost = do { (tape,req) <- get
+                ; let (value,tape') = break (`elem` ":/") tape
+                ; put (tape',liftM (\r -> r {host = value}) req)
+                }
 
 _parsePort :: State (String,Maybe Request) ()
-_parsePort = get >>= \(tape,req) ->
-             let (value,tape') = break (=='/') tape
-             in case (reads value)
-                of [(value',"")] -> put (tape',liftM (\r -> r {port = value'}) req)
-                   _             -> put (tape',req)
+_parsePort = do { (tape,req) <- get
+                ; let (value,tape') = break (=='/') tape
+                ; case (reads value)
+                  of [(value',"")] -> put (tape',liftM (\r -> r {port = value'}) req)
+                     _             -> put (tape',req)
+                }
 
 _parsePath :: State (String,Maybe Request) ()
-_parsePath = get >>= \(tape,req) ->
-             let (value,tape') = break (=='?') tape
-                 value'        = "" : map (decodeWithDefault "") (splitBy (=='/') value)
-             in put (tape',liftM (\r -> r {pathComps=value'}) req)
+_parsePath = do { (tape,req) <- get
+                ; let (value,tape') = break (=='?') tape
+                      value'        = "" : map (decodeWithDefault "") (splitBy (=='/') value)
+                ; put (tape',liftM (\r -> r {pathComps=value'}) req)
+                }
 
 _parseQString :: State (String,Maybe Request) ()
-_parseQString = get >>= \(tape,req) ->
-                let (value,tape') = break (=='#') tape
-                    fields        = fromList $ filter (/=("","")) (map parseField (splitBy (=='&') value))
-                in put (tape',liftM (\r -> r {qString=fields}) req)
+_parseQString = do { (tape,req) <- get
+                   ; let (value,tape') = break (=='#') tape
+                         fields        = fromList $ filter (/=("","")) (map parseField (splitBy (=='&') value))
+                   ; put (tape',liftM (\r -> r {qString=fields}) req)
+                   }
   where parseField tape = let (k,v) = break (=='=') tape
                           in case (v)
                              of ('=':v') -> (decodeWithDefault "" k,decodeWithDefault "" v')
                                 _        -> (decodeWithDefault "" k,"")
 
 _parseSymbol :: (Char,Bool) -> State (String,Maybe Request) ()
-_parseSymbol (c,required) = get >>= \(tape,req) ->
-                            if ([c] `isPrefixOf` tape)
-                            then put (drop 1 tape,req)
-                            else if (required) 
-                                 then put ("",Nothing)
-                                 else put (tape,req)
+_parseSymbol (c,required) = do { (tape,req) <- get
+                               ; if ([c] `isPrefixOf` tape)
+                                 then put (drop 1 tape,req)
+                                 else if (required) 
+                                      then put ("",Nothing)
+                                      else put (tape,req)
+                               }
 
 instance Show Method where
   showsPrec _ m = case m 

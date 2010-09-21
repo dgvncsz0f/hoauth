@@ -28,7 +28,8 @@ module Network.OAuth.Http.Util where
 
 splitBy :: (a -> Bool) -> [a] -> [[a]]
 splitBy = split (id)
-  where split accum p (x:xs) | p x       = (accum []) : split id p xs
-                             | otherwise = split (accum . (x:)) p xs
-        split accum _ []                 = [accum []]
+  where split accum p (x:xs) 
+          | p x          = (accum []) : split id p xs
+          | otherwise    = split (accum . (x:)) p xs
+        split accum _ [] = [accum []]
 

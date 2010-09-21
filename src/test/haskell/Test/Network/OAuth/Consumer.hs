@@ -35,15 +35,15 @@ import Data.Char (ord,chr)
 import Network.OAuth.Consumer
 import Network.OAuth.Http.Request
 import Network.OAuth.Http.Response
-import Network.OAuth.Http.HttpClient
+import Network.OAuth.Http.CurlHttpClient
 import Network.OAuth.Http.PercentEncoding
 import qualified Data.ByteString.Lazy as B
 import qualified Data.Binary as Bi
 
 ftest0 = T.TestCase $ do
   let token     = fromApplication $ Application "dpf43f3p2l4k3l03" "kd94hf93k423kf44" (URL "http://printer.example.com/request_token_ready")
-      nonce     = "hsu94j3884jdopsl" 
-      timestamp = "1191242090" 
+      nonce     = Nonce "hsu94j3884jdopsl" 
+      timestamp = Timestamp "1191242090" 
       assert    = "OAuth "
                   ++ "oauth_signature=\"kd94hf93k423kf44%26\""
                   ++ ",oauth_consumer_key=\"dpf43f3p2l4k3l03\""
@@ -64,8 +64,8 @@ ftest1 = T.TestCase $ do
                           (fromList [("content-type","application/x-www-form-urlencoded")]) 
                           (B.pack . map (fromIntegral.ord) $ "oauth_token=hh5s93j4hdidpola&oauth_token_secret=hdhd0244k9j7ao03&oauth_callback_confirmed=true")
       Right token = fromResponse fakeResp (fromApplication $ Application "dpf43f3p2l4k3l03" "kd94hf93k423kf44" OOB)
-      nonce     = "hsu94j3884jdopsl"
-      timestamp = "1191242090"
+      nonce     = Nonce "hsu94j3884jdopsl"
+      timestamp = Timestamp "1191242090"
       verifier  = "hfdp7dh39dks9884"
       assert    = "OAuth "
                   ++ "oauth_signature=\"kd94hf93k423kf44%26hdhd0244k9j7ao03\""
@@ -84,46 +84,40 @@ ftest1 = T.TestCase $ do
     (authorization PLAINTEXT Nothing nonce timestamp (injectOAuthVerifier "hfdp7dh39dks9884" token) request)
 
 ftest2 = T.TestCase $ do
-  let app     = Application "foo" "bar" OOB
-      payload = B.pack . map (fromIntegral.ord) $ "oauth_token_secret=foobar&oauth_callback_confirmed=true"
-      message = "missing required keys"
-      errorMsg = unlines [ "status: 200"
-                         , "statusLine: " ++ message
-                         , "headers: []"
-                         , "payload: " ++ map (chr . fromIntegral) (B.unpack payload)
-                         ]
+  let app         = Application "foo" "bar" OOB
+      payload     = B.pack . map (fromIntegral.ord) $ "oauth_token_secret=foobar&oauth_callback_confirmed=true"
+      message     = "missing required keys"
+      errorMsg    = "Missing at least one required oauth parameter [expecting=[\"oauth_token\",\"oauth_token_secret\",\"oauth_callback_confirmed\"], response=status: 200, reason: missing required keys]"
+      Left result = fromResponse (RspHttp 200 message empty payload) (fromApplication app)
 
-  T.assertBool
+  T.assertEqual
     "test response without oauth_token do nothing"
-    ((Left errorMsg) == (fromResponse (RspHttp 200 message empty payload) (fromApplication app)))
+    errorMsg
+    result
   
 ftest3 = T.TestCase $ do
-  let app     = Application "foo" "bar" OOB
-      payload = B.pack . map (fromIntegral.ord) $ "oauth_token=foobar&oauth_callback_confirmed=true"
-      message = "missing required keys"
-      errorMsg = unlines [ "status: 200"
-                         , "statusLine: " ++ message
-                         , "headers: []"
-                         , "payload: " ++ map (chr . fromIntegral) (B.unpack payload)
-                         ]
+  let app         = Application "foo" "bar" OOB
+      payload     = B.pack . map (fromIntegral.ord) $ "oauth_token=foobar&oauth_callback_confirmed=true"
+      message     = "missing required keys"
+      errorMsg    = "Missing at least one required oauth parameter [expecting=[\"oauth_token\",\"oauth_token_secret\",\"oauth_callback_confirmed\"], response=status: 200, reason: missing required keys]"
+      Left result = fromResponse (RspHttp 200 message empty payload) (fromApplication app)
 
-  T.assertBool
+  T.assertEqual
     "test response without oauth_token_secret do nothing"
-    ((Left errorMsg) == (fromResponse (RspHttp 200 message empty payload) (fromApplication app)))
+    errorMsg
+    result
 
 ftest4 = T.TestCase $ do
-  let app      = Application "foo" "bar" OOB
-      payload  = B.pack . map (fromIntegral.ord) $ "oauth_token=foobar&oauth_token_secret=true"
-      message  = "missing required keys"
-      errorMsg = unlines [ "status: 200"
-                         , "statusLine: " ++ message
-                         , "headers: []"
-                         , "payload: " ++ map (chr . fromIntegral) (B.unpack payload)
-                         ]
+  let app         = Application "foo" "bar" OOB
+      payload     = B.pack . map (fromIntegral.ord) $ "oauth_token=foobar&oauth_token_secret=true"
+      message     = "missing required keys"
+      errorMsg    = "Missing at least one required oauth parameter [expecting=[\"oauth_token\",\"oauth_token_secret\",\"oauth_callback_confirmed\"], response=status: 200, reason: missing required keys]"
+      Left result = fromResponse (RspHttp 200 message empty payload) (fromApplication app)
 
-  T.assertBool
+  T.assertEqual
     "test response without oauth_callback_confirmed do nothing"
-    ((Left errorMsg) == (fromResponse (RspHttp 200 message empty payload) (fromApplication app)))
+    errorMsg
+    result
 
 ftest5 = T.TestCase $ do
   let app      = Application "foo" "bar" OOB
@@ -163,8 +157,8 @@ ftest7 = T.TestCase $ do
       payload   = B.pack . map (fromIntegral.ord)
       noToken   = fromApplication app 
       Right reqToken = fromResponse (RspHttp 200 "" empty (payload "oauth_token=nnch734d00sl2jdk&oauth_token_secret=pfkkdhi9sl3r4s00&oauth_callback_confirmed=true")) noToken
-      nonce          = "kllo9940pd9333jh"
-      timestamp      = "1191242096"
+      nonce          = Nonce "kllo9940pd9333jh"
+      timestamp      = Timestamp "1191242096"
       Just request   = parseURL "http://photos.example.net/photos?file=vacation.jpg&size=original"
       expected  = "OAuth "
                   ++ "oauth_signature=\"" ++ encode "tR3+Ty81lMeYAr/Fid0kMTYa/WM=" ++"\""
@@ -186,8 +180,8 @@ ftest8 = T.TestCase $ do
       noToken   = fromApplication app 
       Right reqToken = fromResponse (RspHttp 200 "" empty (payload "oauth_token=nnch734d00sl2jdk&oauth_token_secret=pfkkdhi9sl3r4s00&oauth_callback_confirmed=true")) noToken
       Right accToken = fromResponse (RspHttp 200 "" empty (payload "oauth_token=nnch734d00sl2jdk&oauth_token_secret=pfkkdhi9sl3r4s00")) reqToken
-      nonce          = "kllo9940pd9333jh"
-      timestamp      = "1191242096"
+      nonce          = Nonce "kllo9940pd9333jh"
+      timestamp      = Timestamp "1191242096"
       Just request   = parseURL "http://photos.example.net/photos?file=vacation.jpg&size=original"
       expected  = "OAuth "
                   ++ "oauth_signature=\"" ++ encode "tR3+Ty81lMeYAr/Fid0kMTYa/WM=" ++"\""
@@ -355,11 +349,13 @@ ftest11 = T.TestCase $ do
 stest0 = T.TestCase $ do
   let app          = Application "dj0yJmk9WjN6WTBncG5BMTlOJmQ9WVdrOVdWcE1WRTAwTldrbWNHbzlOakUxT1RJM01UUTMmcz1jb25zdW1lcnNlY3JldCZ4PWY4" "02a8b7e40e348a0f2025dd1d3c627f7a1e60e844" OOB
       Just yqlUrl  = parseURL "http://query.yahooapis.com/v1/yql?q=select%20%2A%20from%20yahoo.identity%20where%20yid%3D%22yahoo%22%3B"
-      CurlM ioresp = runOAuth (ignite app >> serviceRequest HMACSHA1 (Just "yahooapis.com") yqlUrl)
+      ioresp       = runOAuthM_ $ do { ignite app
+                                     ; signRq2 HMACSHA1 (Just $ Realm "yahooapis.com") yqlUrl >>= serviceRequest CurlClient
+                                     }
 
   response <- ioresp
   T.assertEqual
-    ("test 2legged authentication works with yql ("++ (statusLine response) ++")")
+    ("test 2legged authentication works with yql ("++ (reason response) ++")")
     (200)
     (status response)
 

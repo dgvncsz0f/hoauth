@@ -26,9 +26,10 @@
 
 -- | Percent encoding <http://tools.ietf.org/html/rfc3986#page-12> functions,
 -- with the exception that all encoding/decoding is in UTF-8.
-module Network.OAuth.Http.PercentEncoding (PercentEncoding(..)
-                                          ,decodeWithDefault
-                                          ) where
+module Network.OAuth.Http.PercentEncoding 
+       ( PercentEncoding(..)
+       , decodeWithDefault
+       ) where
 
 import Data.List (unfoldr)
 import qualified Codec.Binary.UTF8.String as U
@@ -49,11 +50,12 @@ instance PercentEncoding Char where
 
   decode [] = Nothing
   decode (x:xs) = case (fmap (U.decode.fst) (decode (x:xs)))
-                  of Nothing    -> Nothing
-                     Just []    -> Nothing
-                     Just (y:_) | x=='%'    -> let sizeof = length (encode y) - 1
-                                               in Just (y,drop sizeof xs)
-                                | otherwise -> Just (y,xs)
+                  of Nothing       -> Nothing
+                     Just []       -> Nothing
+                     Just (y:_) 
+                       | x=='%'    -> let sizeof = length (encode y) - 1
+                                      in Just (y,drop sizeof xs)
+                       | otherwise -> Just (y,xs)
 
 instance PercentEncoding Word8 where
   encode b | b `elem` whitelist = [chr.fromIntegral $ b]

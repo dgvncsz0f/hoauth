@@ -11,38 +11,51 @@ Example
 The following code should perform a 3 legged oauth request using Yahoo
 as the service provider::
 
-  Just reqUrl = parseURL "https://api.login.yahoo.com/oauth/v2/get_request_token"
-  Just accUrl = parseURL "https://api.login.yahoo.com/oauth/v2/get_token"
-  Just srvUrl = parseURL "http://query.yahooapis.com/v1/yql?q=select%20%2A%20from%20social.profile%20where%20guid%3Dme"
-  authUrl     = head . find (=="xoauth_request_auth_url") . oauthParams
-  app         = Application "<consumer key>" "<consumer secret>" OOB
-  response    = runOAuth $ do ignite app
-                              oauthRequest PLAINTEXT Nothing reqUrl
-                              cliAskAuthorization authUrl
-                              oauthRequest PLAINTEXT Nothing accUrl
-                              serviceRequest HMACSHA1 (Just "yahooapis.com") srvUrl
+  reqUrl   = fromJust $ parseURL "https://api.login.yahoo.com/oauth/v2/get_request_token"
+  accUrl   = fromJust $ parseURL "https://api.login.yahoo.com/oauth/v2/get_token"
+  srvUrl   = fromJust $ parseURL "http://query.yahooapis.com/v1/yql?q=select%20%2A%20from%20social.profile%20where%20guid%3Dme"
+  authUrl  = head . find (=="xoauth_request_auth_url") . oauthParams
+  app      = Application "<consumer key>" "<consumer secret>" OOB
+  response = runOAuthM_ $ do { ignite app
+                             ; signRq2 PLAINTEXT Nothing reqUrl >>= oauthRequest CurlClient
+                             ; cliAskAuthorization authUrl
+                             ; signRq2 PLAINTEXT Nothing accUrl >>= oauthRequest CurlClient
+                             ; signRq2 HMACSHA1 (Just $ Realm "yahooapis.com") srvUrl >>= serviceRequest CurlClient
+  
+                             }
 
 Another example, this time using Twitter as the service provider::
 
-  Just reqUrl = parseURL "http://twitter.com/oauth/request_token"
-  Just accUrl = parseURL "http://twitter.com/oauth/access_token"
-  Just srvUrl = parseURL "http://api.twitter.com/1/statuses/home_timeline.xml"
-  authUrl     = ("http://twitter.com/oauth/authorize?oauth_token="++) . findWithDefault ("oauth_token","") . oauthParams
-  app         = Application "<consumer key>" "<consumer secret>" OOB
-  response    = runOAuth $ do ignite app
-                              oauthRequest HMACSHA1 Nothing reqUrl
-                              cliAskAuthorization authUrl
-                              oauthRequest HMACSHA1 Nothing accUrl
-                              serviceRequest HMACSHA1 Nothing srvUrl
+  reqUrl   = fromJust $ parseURL "http://twitter.com/oauth/request_token"
+  accUrl   = fromJust $ parseURL "http://twitter.com/oauth/access_token"
+  srvUrl   = fromJust $ parseURL "http://api.twitter.com/1/statuses/home_timeline.xml"
+  authUrl  = ("http://twitter.com/oauth/authorize?oauth_token="++) . findWithDefault ("oauth_token","") . oauthParams
+  app      = Application "<consumer key>" "<consumer secret>" OOB
+  response = runOAuthM_ $ do { ignite app
+                             ; signRq2 HMACSHA1 Nothing reqUrl >>= oauthRequest CurlClient
+                             ; cliAskAuthorization authUrl
+                             ; signRq2 HMACSHA1 Nothing accUrl >>= oauthRequest CurlClient
+                             ; signRq2 HMACSHA1 Nothing srvUrl >>= serviceRequest CurlClient
+                             }
 
 References
 ----------
 
-* ./src/test/haskell/Tests.hs
+* ./src/test/haskell/test_hoauth.hs
 * http://oauth.net/
 
 Changelog
 ---------
+
+::
+
+  v0_3_0
+
+* Consumer: OAuthMonad is now OAuthMonadT. Major change is that users may now provide custom error handler instead of fail
+* HttpClient: completely rewritten with better error handling support
+* HttpClient: Extracting curl instance into its own module
+* CurlHttpClient: ignoring SSL certificate errors
+* CurlHttpClient: defining a timeout of 30s
 
 ::
 

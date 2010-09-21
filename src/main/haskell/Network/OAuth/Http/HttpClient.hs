@@ -1,5 +1,3 @@
-{-# LANGUAGE GeneralizedNewtypeDeriving #-}
-
 -- Copyright (c) 2009, Diego Souza
 -- All rights reserved.
 -- 
@@ -26,63 +24,18 @@
 -- OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
 -- OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 
--- | A type class that is able to perform HTTP requests.
-module Network.OAuth.Http.HttpClient (HttpClient(..)
-                                     ,CurlM(..)
-                                     ) where
+-- | Minimum definition of a user agent required to implement oauth
+-- service calls. This should suffice for most applications.
+module Network.OAuth.Http.HttpClient
+       ( HttpClient(..)
+       ) where
 
-import Network.Curl
-import Control.Monad.Fix
 import Network.OAuth.Http.Request
 import Network.OAuth.Http.Response
 import Control.Monad.Trans
-import Data.Char (chr,ord)
-import qualified Data.ByteString.Lazy as B
 
--- | The HttpClient type class.
-class (Monad m) => HttpClient m where
-  -- | Performs the request and returns the response wrapped into a given monad.
-  request :: Request -> m Response
-
-  -- | Unpacks the monad and returns the inner IO monad.
-  unpack :: m a -> IO a
-
--- | The libcurl backend
-newtype CurlM a = CurlM { unCurlM :: IO a }
-  deriving (Monad,MonadIO,MonadFix,Functor)
-
-instance HttpClient CurlM where
-  unpack = unCurlM
-
-  request req = CurlM $ withCurlDo $ do c <- initialize
-                                        setopts c opts
-                                        rsp <- perform_with_response_ c
-                                        return $ RspHttp (respStatus rsp)
-                                                         (respStatusLine rsp)
-                                                         (fromList.respHeaders $ rsp)
-                                                         (B.pack.map (fromIntegral.ord).respBody $ rsp)
-    where httpVersion = case (version req)
-                        of Http10 -> HttpVersion10
-                           Http11 -> HttpVersion11
-          
-          curlMethod = case (method req)
-                       of GET   -> [CurlHttpGet True]
-                          HEAD  -> [CurlNoBody True,CurlCustomRequest "HEAD"]
-                          other -> if (B.null.reqPayload $ req)
-                                   then [CurlHttpGet True,CurlCustomRequest (show other)]
-                                   else [CurlPost True,CurlCustomRequest (show other)]
-          curlPostData = if (B.null.reqPayload $ req)
-                         then []
-                         else [CurlPostFields [map (chr.fromIntegral).B.unpack.reqPayload $ req]]
-          curlHeaders = let headers = (map (\(k,v) -> k++": "++v).toList.reqHeaders $ req)
-                        in [CurlHttpHeaders $ ("Content-Length: " ++ (show.B.length.reqPayload $ req))
-                                              : headers
-                           ]
-
-          opts = [CurlURL (showURL req)
-                 ,CurlHttpVersion httpVersion
-                 ,CurlHeader False
-                 ] ++ curlHeaders
-                   ++ curlMethod 
-                   ++ curlPostData
-          
+class HttpClient c where
+  runClient :: (MonadIO m) => c -> Request -> m (Either String Response)
+  
+  runClient_ :: (MonadIO m) => c -> Request -> m Response
+  runClient_ c r = runClient c r >>= either fail return

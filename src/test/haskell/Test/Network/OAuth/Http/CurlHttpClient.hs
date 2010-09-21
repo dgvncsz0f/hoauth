@@ -24,27 +24,26 @@
 -- OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
 -- OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 
-module Test.Network.OAuth.Http.HttpClient where
+module Test.Network.OAuth.Http.CurlHttpClient where
 
 import qualified Test.HUnit as T
 import Network.OAuth.Http.HttpClient
+import Network.OAuth.Http.CurlHttpClient
 import Network.OAuth.Http.Response
 import Network.OAuth.Http.Request
 import Data.Maybe (fromJust)
 
 stest0 = T.TestCase $ do
-  let CurlM ioresp = request (fromJust $ parseURL "http://github.com/dsouza/hoauth/")
-
-  response <- ioresp
+  Right response <- runClient CurlClient (fromJust $ parseURL "http://github.com/dsouza/hoauth/")
   T.assertEqual
     "Assert status code is set on response"
     (200)
     (status response)
 
   T.assertEqual
-    "Assert statusLine is set on response"
+    "Assert reason is set on response"
     ("HTTP/1.1 200 OK")
-    (statusLine response)
+    (reason response)
 
   T.assertEqual
     "Assert headers are set (content-type)"
@@ -56,19 +55,17 @@ stest0 = T.TestCase $ do
     (not $ null $ ifindWithDefault ("content-length","") (rspHeaders response))
 
 stest1 = T.TestCase $ do
-  let req          = fromJust $ parseURL "http://github.com/dsouza/hoauth/"
-      CurlM ioresp = request (req {method = HEAD})
-
-  response <- ioresp
+  let req = fromJust $ parseURL "http://github.com/dsouza/hoauth/"
+  Right response <- runClient CurlClient (req {method = HEAD})
   T.assertEqual
     "Assert status code is set on response"
     (200)
     (status response)
 
   T.assertEqual
-    "Assert statusLine is set on response"
+    "Assert reason is set on response"
     ("HTTP/1.1 200 OK")
-    (statusLine response)
+    (reason response)
 
   T.assertEqual
     "Assert headers are set (content-type)"

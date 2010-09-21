@@ -26,18 +26,19 @@
 
 -- | The response of the server for a given "Request". Similarly to "Request",
 -- it is currently only able to represent HTTP responses.
-module Network.OAuth.Http.Response (Response(..)
-                                   ) where
+module Network.OAuth.Http.Response 
+       ( Response(..)
+       ) where
 
 import Data.ByteString.Lazy as B
 import Network.OAuth.Http.Request (FieldList)
 
-data Response = RspHttp {status     :: Int           -- ^ The status code (e.g. 200, 302)
-                        ,statusLine :: String        -- ^ The message that comes along with the status (e.g. HTTP/1.1 200 OK)
-                        ,rspHeaders :: FieldList     -- ^ The response headers
-                        ,rspPayload :: B.ByteString  -- ^ The body of the message
+data Response = RspHttp { status     :: Int           -- ^ The status code (e.g. 200, 302)
+                        , reason     :: String        -- ^ The message that comes along with the status (e.g. HTTP/1.1 200 OK)
+                        , rspHeaders :: FieldList     -- ^ The response headers
+                        , rspPayload :: B.ByteString  -- ^ The body of the message
                         }
-  deriving (Show)
+              deriving (Show)
 
 -- contentType :: Response -> (String,FieldList)
 -- contentType = let string         = findWithDefault ("content-type","text/html") . rspHeaders
