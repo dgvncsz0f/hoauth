@@ -16,13 +16,13 @@ as the service provider::
   srvUrl   = fromJust $ parseURL "http://query.yahooapis.com/v1/yql?q=select%20%2A%20from%20social.profile%20where%20guid%3Dme"
   authUrl  = head . find (=="xoauth_request_auth_url") . oauthParams
   app      = Application "<consumer key>" "<consumer secret>" OOB
-  response = runOAuthM_ $ do { ignite app
-                             ; signRq2 PLAINTEXT Nothing reqUrl >>= oauthRequest CurlClient
-                             ; cliAskAuthorization authUrl
-                             ; signRq2 PLAINTEXT Nothing accUrl >>= oauthRequest CurlClient
-                             ; signRq2 HMACSHA1 (Just $ Realm "yahooapis.com") srvUrl >>= serviceRequest CurlClient
+  token    = fromApplication app
+  response = runOAuthM token $ do { signRq2 PLAINTEXT Nothing reqUrl >>= oauthRequest CurlClient
+                                  ; cliAskAuthorization authUrl
+                                  ; signRq2 PLAINTEXT Nothing accUrl >>= oauthRequest CurlClient
+                                  ; signRq2 HMACSHA1 (Just $ Realm "yahooapis.com") srvUrl >>= serviceRequest CurlClient
   
-                             }
+                                  }
 
 Another example, this time using Twitter as the service provider::
 
@@ -31,12 +31,13 @@ Another example, this time using Twitter as the service provider::
   srvUrl   = fromJust $ parseURL "http://api.twitter.com/1/statuses/home_timeline.xml"
   authUrl  = ("http://twitter.com/oauth/authorize?oauth_token="++) . findWithDefault ("oauth_token","") . oauthParams
   app      = Application "<consumer key>" "<consumer secret>" OOB
-  response = runOAuthM_ $ do { ignite app
-                             ; signRq2 HMACSHA1 Nothing reqUrl >>= oauthRequest CurlClient
-                             ; cliAskAuthorization authUrl
-                             ; signRq2 HMACSHA1 Nothing accUrl >>= oauthRequest CurlClient
-                             ; signRq2 HMACSHA1 Nothing srvUrl >>= serviceRequest CurlClient
-                             }
+  token    = fromApplication app
+  response = runOAuthM token $ do { ignite app
+                                  ; signRq2 HMACSHA1 Nothing reqUrl >>= oauthRequest CurlClient
+                                  ; cliAskAuthorization authUrl
+                                  ; signRq2 HMACSHA1 Nothing accUrl >>= oauthRequest CurlClient
+                                  ; signRq2 HMACSHA1 Nothing srvUrl >>= serviceRequest CurlClient
+                                  }
 
 References
 ----------

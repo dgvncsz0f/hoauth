@@ -277,10 +277,11 @@ ftest12 = T.TestCase $ do
       numbytes = 128
       key      = R.PrivateKey numbytes modulus expoent
       Just req = parseURL "http://foo.bar:8080/foobar?foo=bar&bar=foo"
+      app      = Application "<<dummy>>" "<<dummy>>" OOB
   T.assertEqual
     "test sign_request (RSA-SHA1)"
     ("JUIS4p4Qgcw7r/6HdplUSZSx2YHLfB/Va6736VbBQSBdk/F1NK0YvQtaRoY67aXvyXrwZGajC4BdHSe53HB7cIBhqdwKmnFqZZw9Bc2yMeoINZqDOctUIXgP0qpc3vflACW1SFQARKUTTKxvmWNPApWPsS44eRZOedjIr25waF0=")
-    (signature (RSASHA1 key) NoToken req)
+    (signature (RSASHA1 key) (fromApplication app) req)
 
 ftest13 = T.TestCase $ do
   let modulus   = 0x00ce3fe6af65b85d7744a287268f0aea4fd783005b6306f353e9e49a9583f7d4ebc7870a65fc30ccdd5ce7a84b8d5a9356f06ae3d00599e5c8bda3b543f4331ccf04fd931e108d75e4abea9c120f46fe735138c31344e4b74a1788edf161d9c2ac6f8cc993927fcab4ef956b7150278daed0d2d630413a5ad56658026a3bcb3ced
@@ -289,22 +290,21 @@ ftest13 = T.TestCase $ do
       key       = R.PrivateKey numbytes modulus expoent
       Just req0 = parseURL "http://foo.bar:80/foobar?foo=bar&bar=foo"
       Just req1 = parseURL "https://foo.bar:443/foobar?foo=bar&bar=foo"
+      app       = Application "<<dummy>>" "<<dummy>>" OOB
   T.assertEqual
     "test sign_request (RSA-SHA1) ignores default port (http,80)"
     ("wspZGQBp1Gv0guYxVYTVllAtasGa9AaSAGcraB15Chgv0MXs4lSt/PPY41WGdQzT3K3D8l2veBeJEqEka63vSJNnDyMPb38oTJrRyn1TvaZzXq4Oyp2y6lgmxL9x4xOrLLGBIMQ8T2gWL+eQJ7FeqTL83MdMqUulyJfxc9PeObA=") -- msg:PUT&http%3A%2F%2Ffoo.bar%2Ffoobar&bar%3Dfoo%26foo%3Dbar
-    (signature (RSASHA1 key) NoToken (req0 { method = PUT }))
+    (signature (RSASHA1 key) (fromApplication app) (req0 { method = PUT }))
 
   T.assertEqual
     "test sign_request (RSA-SHA1) ignores default port (https,443)"
     ("AjwVGN2wkvDjb/bGDqMtAzwn9hhx3nCH2GIR+puXim4qMk1Qy7aJCDrDyBNPgzET/4lr3bwPSK0UaBO4iyp5e4Zv5BGp0VWkP7clQZaqR56/zKpcgvKav9Ge7tM02dR0XoODfSBk94ckyotTp1F4cmF4bEe1mHlsabWbJXQq29k=") -- msg:DELETE&https%3A%2F%2Ffoo.bar%2Ffoobar&bar%3Dfoo%26foo%3Dbar
-    (signature (RSASHA1 key) NoToken (req1 { method = DELETE }))
+    (signature (RSASHA1 key) (fromApplication app) (req1 { method = DELETE }))
 
 stest0 = T.TestCase $ do
   let app          = Application "dj0yJmk9WjN6WTBncG5BMTlOJmQ9WVdrOVdWcE1WRTAwTldrbWNHbzlOakUxT1RJM01UUTMmcz1jb25zdW1lcnNlY3JldCZ4PWY4" "02a8b7e40e348a0f2025dd1d3c627f7a1e60e844" OOB
       Just yqlUrl  = parseURL "http://query.yahooapis.com/v1/yql?q=select%20%2A%20from%20yahoo.identity%20where%20yid%3D%22yahoo%22%3B"
-      ioresp       = runOAuthM_ $ do { ignite app
-                                     ; signRq2 HMACSHA1 (Just $ Realm "yahooapis.com") yqlUrl >>= serviceRequest CurlClient
-                                     }
+      ioresp       = runOAuthM (fromApplication app) $ signRq2 HMACSHA1 (Just $ Realm "yahooapis.com") yqlUrl >>= serviceRequest CurlClient
 
   response <- ioresp
   T.assertEqual

@@ -40,12 +40,11 @@
 -- >  srvUrl    = fromJust . parseURL $ "http://service/path/to/resource/"
 -- >  authUrl   = ("http://service.provider/authorize?oauth_token="++) . findWithDefault ("oauth_token","ERROR") . oauthParams
 -- >  app       = Application "consumerKey" "consumerSec" OOB
--- >  response  = runOAuthM_ $ do { ignite app
--- >                              ; signRq2 PLAINTEXT Nothing reqUrl >>= oauthRequest CurlHttpClient
--- >                              ; cliAskAuthorization authUrl
--- >                              ; signRq2 PLAINTEXT Nothing accUrl >>= oauthRequest CurlHttpClient
--- >                              ; signRq2 HMACSHA1 (Just $ Realm "realm") srvUrl >>= serviceRequest CurlHttpClient
--- >                              }
+-- >  response  = runOAuthM (fromApplication app) $ do { signRq2 PLAINTEXT Nothing reqUrl >>= oauthRequest CurlHttpClient
+-- >                                                   ; cliAskAuthorization authUrl
+-- >                                                   ; signRq2 PLAINTEXT Nothing accUrl >>= oauthRequest CurlHttpClient
+-- >                                                   ; signRq2 HMACSHA1 (Just $ Realm "realm") srvUrl >>= serviceRequest CurlHttpClient
+-- >                                                   }
 -- 
 module Network.OAuth.Consumer 
        ( -- * Types
@@ -62,7 +61,6 @@ module Network.OAuth.Consumer
          -- * OAuthMonadT related functions
        , runOAuth
        , runOAuthM
-       , runOAuthM_
        , oauthRequest
        , packRq
        , signRq
@@ -76,7 +74,6 @@ module Network.OAuth.Consumer
          -- * Token related functions
        , twoLegged
        , threeLegged
-       , notoken
        , signature
        , injectOAuthVerifier
        , fromApplication
@@ -152,9 +149,6 @@ data Token =
   | AccessToken { application :: Application
                 , oauthParams :: FieldList
                 }
-  {-| Use this when there is no oauth token present. The request goes unauthenticated.
-   -}
-  | NoToken
   deriving (Eq)
            
 -- | Available signature methods.
@@ -223,11 +217,6 @@ threeLegged :: Token -> Bool
 threeLegged (AccessToken _ _) = True
 threeLegged _                 = False
 
--- | Tests whether or not the current token is NoToken.
-notoken :: Token -> Bool
-notoken NoToken = True
-notoken _       = False
-
 -- | Transforms an application into a token.
 ignite :: (MonadIO m) => Application -> OAuthMonadT m ()
 ignite = putToken . fromApplication
@@ -248,10 +237,6 @@ runOAuth h t (OAuthMonadT f) = do { v <- f t
 -- `fail` as the error handler.
 runOAuthM :: (Monad m) => Token -> OAuthMonadT m a -> m a
 runOAuthM = runOAuth fail
-
--- | Invokes runOAuthM with NoToken using fail as the error handler.
-runOAuthM_ :: (Monad m) => OAuthMonadT m a -> m a
-runOAuthM_ = runOAuthM NoToken
 
 -- | Executes an oauth request which is intended to upgrade/refresh the current
 --   token.
@@ -277,13 +262,12 @@ serviceRequest c req = do { result <- lift $ runClient c (unpackRq req)
 signRq2 :: (MonadIO m) => SigMethod -> Maybe Realm -> Request -> OAuthMonadT m OAuthRequest
 signRq2 sigm realm req = getToken >>= \t -> lift $ signRq t sigm realm req
 
--- | Simply create the OAuthRequest but adds no Authorization header. This is the same as using signRq with NoToken.
+-- | Simply create the OAuthRequest but adds no Authorization header.
 packRq :: Request -> OAuthRequest
 packRq = OAuthRequest
 
 -- | Complete the request with authorization headers.
 signRq :: (MonadIO m) => Token -> SigMethod -> Maybe Realm -> Request -> m OAuthRequest
-signRq NoToken _ _ req       = return (packRq req)
 signRq token sigm realm req0 = do { nonce     <- _nonce
                                   ; timestamp <- _timestamp
                                   ; let authValue = authorization sigm realm nonce timestamp token req0
@@ -326,7 +310,6 @@ fromResponse rsp token | validRsp =  case (token)
                                      of TwoLegg app params     -> Right $ ReqToken app (payload `union` params)
                                         ReqToken app params    -> Right $ AccessToken app (payload `union` params)
                                         AccessToken app params -> Right $ AccessToken app (payload `union` params)
-                                        NoToken                -> Right $ NoToken
                        | otherwise = Left errorMessage
   where payload = parseQString . map (chr.fromIntegral) . B.unpack . rspPayload $ rsp
 
@@ -341,7 +324,6 @@ fromResponse rsp token | validRsp =  case (token)
                               , "oauth_token_secret"
                               , "oauth_callback_confirmed"
                               ]
-          | notoken token   = []
           | otherwise       = [ "oauth_token"
                               , "oauth_token_secret"
                               ]
@@ -380,7 +362,6 @@ authorization m realm nonce time token req = oauthPrefix ++ enquote (("oauth_sig
                    AccessToken _ params -> filter (not.null.snd) [ ("oauth_token", findWithDefault ("oauth_token","") params)
                                                                  , ("oauth_session_handle", findWithDefault ("oauth_session_handle","") params)
                                                                  ]
-                   NoToken              -> []
 
         oauthSignature = signature m token (req {qString = (qString req) `union` (fromList oauthFields)})
 
@@ -462,7 +443,6 @@ instance Bi.Binary Token where
                                     ; Bi.put app
                                     ; Bi.put params
                                     }
-  put NoToken                  = Bi.put (3 :: Word8)
   get = do { t <- Bi.get :: Bi.Get Word8
            ; case t 
              of 0 -> do { app    <- Bi.get
@@ -477,7 +457,6 @@ instance Bi.Binary Token where
                         ; params <- Bi.get
                         ; return (AccessToken app params)
                         }
-                3 -> return NoToken
                 _ -> fail "Consumer#get: parse error"
            }
 
