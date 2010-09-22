@@ -50,7 +50,14 @@ Changelog
 
 ::
 
-  v0_3_0
+  v0.3.1
+
+* Consumer: enabling RSA-SHA1 authentication
+* Consumer: bugfix: removing NoToken type constructor
+
+::
+
+  v0.3.0
 
 * Consumer: OAuthMonad is now OAuthMonadT. Major change is that users may now provide custom error handler instead of fail
 * HttpClient: completely rewritten with better error handling support
@@ -60,26 +67,26 @@ Changelog
 
 ::
 
-  v0_2_5
+  v0.2.5
 
 * bugfix: freezing when doing PUT or POST requests
 
 ::
 
-  v0_2_4
+  v0.2.4
 
 * Adding completeRequest function
 * Using fail instead of Either type in oauthRequest to signal failures
 
 ::
 
-  v0_2_3
+  v0.2.3
 
 * Exporting OAuthToken to the world
 
 ::
 
-  v0_2_2
+  v0.2.2
 
 * Adding unlift function to HttpClient class
 * Minor improvements on the documentation
@@ -87,32 +94,32 @@ Changelog
 
 ::
 
-  V0_2_1
-  v0_2_0
+  v0.2.1
+  v0.2.0
 
 * API is now capable of performing HTTP requests, thus fully capable of dealing with the OAuth protocol;
 * Temporally dropped RSA signature support;
 
 ::
 
-  V0_1_9
-  v0_1_8
-  v0_1_7
-  V0_1_6
-  v0_1_5
+  v0.1.9
+  v0.1.8
+  v0.1.7
+  v0.1.6
+  v0.1.5
 
 * minor change: another attempt to fix haddock errors on hackage
 
 ::
 
-  v0_1_4
-  V0_1_3
+  v0.1.4
+  v0.1.3
 
 * minor change: adding nonce_and_timestamp function
 
 ::
 
-  V0_1_2
+  v0.1.2
 
 * minor change: using Control.Monad in Consumer#response function
 * minor change: removing useless apply function in Request
@@ -120,31 +127,31 @@ Changelog
 
 ::
 
-  v0_1_1
+  v0.1.1
 
 * fixing compiler warnings
 * fixing haddock errors/warnings
 
 ::
 
-  v0_1_0
+  v0.1.0
 
 * implementing RSA-SHA1 signature method
 
 ::
 
-  v0_0_4
+  v0.0.4
 
 * Changing the license to BSD3
 
 ::
 
-  v0_0_3
+  v0.0.3
 
 * Adding/Implementing a few utility functions
 
 ::
 
-  v0_0_1
+  v0.0.1
 
 * First release
