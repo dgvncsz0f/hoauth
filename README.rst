@@ -50,6 +50,12 @@ Changelog
 
 ::
 
+  v0.3.2
+
+* HttpClient: new instance DebugClient
+
+::
+
   v0.3.1
 
 * Consumer: enabling RSA-SHA1 authentication
