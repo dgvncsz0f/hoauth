@@ -39,17 +39,17 @@ import Control.Monad.Trans
 import Data.Char (chr,ord)
 import qualified Data.ByteString.Lazy as B
 
-data CurlClient = CurlClient
+data CurlClient = CurlClient | OptionsCurlClient [CurlOption]
 
 instance HttpClient CurlClient where
-  runClient _ req = liftIO $ withCurlDo $ do { c <- initialize
-                                             ; setopts c opts
-                                             ; rsp <- perform_with_response_ c
-                                             ; case (respCurlCode rsp)
-                                               of errno
-                                                    | errno `elem` successCodes -> return $ Right (fromResponse rsp)
-                                                    | otherwise                 -> return $ Left (show errno)
-                                             }
+  runClient client req = liftIO $ withCurlDo $ do { c <- initialize
+                                                  ; setopts c opts
+                                                  ; rsp <- perform_with_response_ c
+                                                  ; case (respCurlCode rsp)
+                                                    of errno
+                                                         | errno `elem` successCodes -> return $ Right (fromResponse rsp)
+                                                         | otherwise                 -> return $ Left (show errno)
+                                                  }
     where httpVersion = case (version req)
                         of Http10 -> HttpVersion10
                            Http11 -> HttpVersion11
@@ -83,5 +83,10 @@ instance HttpClient CurlClient where
                  ] ++ curlHeaders
                    ++ curlMethod 
                    ++ curlPostData
+                   ++ clientOptions
+          
+          clientOptions = case client
+                               of CurlClient -> []
+                                  OptionsCurlClient o -> o
           
           fromResponse rsp = RspHttp (respStatus rsp) (respStatusLine rsp) (fromList.respHeaders $ rsp) (B.pack.map (fromIntegral.ord).respBody $ rsp)
