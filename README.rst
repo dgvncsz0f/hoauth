@@ -50,6 +50,12 @@ Changelog
 
 ::
 
+  v0.3.3
+
+* CurlHttpClient: Added OptionsHttpClient [CurlOption] so clients can pass in their own Curl options if needed.
+
+::
+
   v0.3.2
 
 * HttpClient: new instance DebugClient
