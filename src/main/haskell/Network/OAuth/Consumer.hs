@@ -88,7 +88,7 @@ import Network.OAuth.Http.PercentEncoding
 import Control.Monad
 import Control.Monad.Trans
 import System.IO
-import System.Random (randomRIO)
+import System.Crypto.Random (getEntropy)
 import System.Locale (defaultTimeLocale)
 import Data.Time (getCurrentTime,formatTime)
 import Data.Char (chr,ord)
@@ -97,6 +97,7 @@ import Data.Word (Word8)
 import qualified Data.Binary as Bi
 import qualified Data.Digest.Pure.SHA as S
 import qualified Codec.Binary.Base64 as B64
+import qualified Data.ByteString as BS
 import qualified Data.ByteString.Lazy as B
 import qualified Codec.Crypto.RSA as R
 
@@ -368,9 +369,7 @@ authorization m realm nonce time token req = oauthPrefix ++ enquote (("oauth_sig
         enquote = intercalate "," . map (\(k,v) -> encode k ++"=\""++ encode v ++"\"")
 
 _nonce :: (MonadIO m) => m Nonce
-_nonce = do { rand <- liftIO (randomRIO (0,maxBound::Int))
-            ; return (Nonce $ show rand)
-            }
+_nonce = liftIO $ liftM (Nonce . B64.encode . BS.unpack) (getEntropy 32)
 
 _timestamp :: (MonadIO m) => m Timestamp
 _timestamp = do { clock <- liftIO getCurrentTime
