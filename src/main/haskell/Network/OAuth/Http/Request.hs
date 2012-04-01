@@ -58,6 +58,7 @@ module Network.OAuth.Http.Request
        ) where
 
 import Control.Monad.State
+import Network.Curl.Post (HttpPost)
 import Network.OAuth.Http.PercentEncoding
 import Network.OAuth.Http.Util
 import Data.List (intercalate,isPrefixOf)
@@ -93,9 +94,10 @@ data Request = ReqHttp { version    :: Version      -- ^ Protocol version
                        , reqHeaders :: FieldList    -- ^ Request headers
                        , pathComps  :: [String]     -- ^ The path split into components 
                        , qString    :: FieldList    -- ^ The query string, usually set for GET requests
-                       , reqPayload :: B.ByteString -- ^ The message body
+                       , reqPayload :: B.ByteString -- ^ The message body (the first/only string part)
+                       , reqPayloadMult :: [HttpPost] -- ^ The message body (in HttpPost parts, see libcurl Post.hs)
                        }
-  deriving (Eq,Show)
+  deriving (Show)
 
 -- | Show the protocol in use (currently either https or http)
 showProtocol :: Request -> String
@@ -154,6 +156,7 @@ parseURL tape = evalState parser (tape,Just initial)
                           , pathComps  = []
                           , qString    = fromList []
                           , reqPayload = B.empty
+                          , reqPayloadMult = []
                           }
 
 -- | Parse a query string.
@@ -175,6 +178,7 @@ parseQString tape = evalState parser (tape,Just initial)
                           , pathComps  = []
                           , qString    = fromList []
                           , reqPayload = B.empty
+                          , reqPayloadMult = []
                           }
 
 -- | Creates a FieldList type from a list.
