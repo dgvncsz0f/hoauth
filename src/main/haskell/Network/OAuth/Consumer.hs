@@ -88,7 +88,7 @@ import Network.OAuth.Http.PercentEncoding
 import Control.Monad
 import Control.Monad.Trans
 import System.IO
-import System.Crypto.Random (getEntropy)
+import System.Entropy (getEntropy)
 import System.Locale (defaultTimeLocale)
 import Data.Time (getCurrentTime,formatTime)
 import Data.Char (chr,ord)
