@@ -34,41 +34,41 @@ import Network.OAuth.Http.Request
 import Data.Maybe (fromJust)
 
 stest0 = T.TestCase $ do
-  Right response <- runClient CurlClient (fromJust $ parseURL "http://github.com/dsouza/hoauth/")
+  Right response <- runClient CurlClient (fromJust $ parseURL "https://github.com/dsouza/hoauth/")
   T.assertEqual
-    "Assert status code is set on response"
+    "curl0: Assert status code is set on response"
     (200)
     (status response)
 
   T.assertEqual
-    "Assert reason is set on response"
+    "curl0: Assert reason is set on response"
     ("HTTP/1.1 200 OK")
     (reason response)
 
   T.assertEqual
-    "Assert headers are set (content-type)"
+    "curl0: Assert headers are set (content-type)"
     (" text/html; charset=utf-8")
     (ifindWithDefault ("content-type","") (rspHeaders response))
 
   T.assertBool
-    "Assert header are set (content-length)"
+    "curl0: Assert header are set (content-length)"
     (not $ null $ ifindWithDefault ("content-length","") (rspHeaders response))
 
 stest1 = T.TestCase $ do
-  let req = fromJust $ parseURL "http://github.com/dsouza/hoauth/"
+  let req = fromJust $ parseURL "https://github.com/dsouza/hoauth/"
   Right response <- runClient CurlClient (req {method = HEAD})
   T.assertEqual
-    "Assert status code is set on response"
+    "curl1: Assert status code is set on response"
     (200)
     (status response)
 
   T.assertEqual
-    "Assert reason is set on response"
+    "curl1: Assert reason is set on response"
     ("HTTP/1.1 200 OK")
     (reason response)
 
   T.assertEqual
-    "Assert headers are set (content-type)"
+    "curl1: Assert headers are set (content-type)"
     (" text/html; charset=utf-8")
     (ifindWithDefault ("content-type","") (rspHeaders response))
 
