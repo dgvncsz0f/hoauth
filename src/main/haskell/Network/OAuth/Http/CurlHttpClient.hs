@@ -61,28 +61,28 @@ instance HttpClient CurlClient where
           curlMethod = case (method req)
                        of GET   -> [ CurlHttpGet True ]
                           HEAD  -> [ CurlNoBody True,CurlCustomRequest "HEAD" ]
-                          other -> if ((B.null . reqPayload $ req) && 0 == length (reqPayloadMult req))
+                          other -> if ((B.null . reqPayload $ req) && 0 == length (multipartPayload req))
                                    then [ CurlHttpGet True,CurlCustomRequest (show other) ]
                                    else [ CurlPost True,CurlCustomRequest (show other) ]
                                         
           curlPostData =
              if B.null . reqPayload $ req
              then
-                case reqPayloadMult req
+                case multipartPayload req
                 of []    -> []                   -- i.e., no payload at all
 
-                   parts -> [CurlHttpPost parts] -- i.e., "multipart/form-data"
+                   parts -> [CurlHttpPost (convertMultipart parts)] -- i.e., "multipart/form-data"
                                                  -- content with a boundary and MIME stuff
                                                  -- see libcurl for HttpPost, Content
              else
-                case reqPayloadMult req
+                case multipartPayload req
                 of []    -> let tostr = map (chr.fromIntegral).B.unpack
                                 field = reqPayload req
                             in [CurlPostFields [tostr field]] -- i.e., "application/x-www-form-urlencoded"
                                                               -- strings with field sep '&'
                                                               -- although we're only giving libcurl a single field
 
-                   parts -> error "with both CurlPostFields and CurlHttpPost, I'm not sure what libcurl would do..."
+                   _ -> error "with both CurlPostFields and CurlHttpPost, I'm not sure what libcurl would do..."
 
           curlHeaders = let headers = (map (\(k,v) -> k++": "++v).toList.reqHeaders $ req)
                         in [CurlHttpHeaders headers]
