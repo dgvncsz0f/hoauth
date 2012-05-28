@@ -99,7 +99,8 @@ import qualified Data.Digest.Pure.SHA as S
 import qualified Codec.Binary.Base64 as B64
 import qualified Data.ByteString as BS
 import qualified Data.ByteString.Lazy as B
-import qualified Codec.Crypto.RSA as R
+import qualified Codec.Crypto.RSA        as R
+import qualified Crypto.Types.PubKey.RSA as R
 
 -- | A request that is ready to be performed, i.e., that contains authorization headers.
 newtype OAuthRequest = OAuthRequest { unpackRq :: Request }
