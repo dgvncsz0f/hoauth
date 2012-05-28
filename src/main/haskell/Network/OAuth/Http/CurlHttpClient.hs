@@ -90,8 +90,8 @@ instance HttpClient CurlClient where
           opts = [ CurlURL (showURL req)
                  , CurlHttpVersion httpVersion
                  , CurlHeader False
-                 , CurlSSLVerifyHost 1
-                 , CurlSSLVerifyPeer False
+                 , CurlSSLVerifyHost 2
+                 , CurlSSLVerifyPeer True
                  , CurlTimeout 30
                  ] ++ curlHeaders
                    ++ curlMethod 
