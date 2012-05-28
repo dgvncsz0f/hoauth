@@ -103,7 +103,7 @@ import qualified Codec.Crypto.RSA as R
 
 -- | A request that is ready to be performed, i.e., that contains authorization headers.
 newtype OAuthRequest = OAuthRequest { unpackRq :: Request }
-                     deriving (Show,Eq)
+                     deriving (Show)
 
 -- | Random string that is unique amongst requests. Refer to <http://oauth.net/core/1.0/#nonce> for more information.
 newtype Nonce = Nonce { unNonce :: String }
@@ -203,9 +203,13 @@ signature m token req = case m
                                             ]
 
         params = if (ifindWithDefault ("content-type","") (reqHeaders req) == "application/x-www-form-urlencoded")
+
+                 -- e.g., in the case of most Twitter API calls
                  then (qString req) `unionAll` (parseQString . map (chr.fromIntegral) 
                                                              . B.unpack 
                                                              . reqPayload $ req)
+
+                 -- e.g., in the case of a "multipart/form-data" image upload, however, the payload isn't signed
                  else qString req
 
 -- | Returns true if the token is able to perform 2-legged oauth requests.
