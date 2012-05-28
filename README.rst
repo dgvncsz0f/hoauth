@@ -59,6 +59,14 @@ Changelog
 
 ::
 
+  v0.3.4
+
+* libcurl to actually verify server certificates using system-level root CA certificate (killerswan)
+* Able to compile against newer RSA library (killerswan)
+* multipart/form-data upload support (killerswan)
+
+::
+
   v0.3.3
 
 * CurlHttpClient: Added OptionsHttpClient [CurlOption] so clients can pass in their own Curl options if needed.
