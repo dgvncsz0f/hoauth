@@ -45,6 +45,15 @@ References
 * ./src/test/haskell/test_hoauth.hs
 * http://oauth.net/
 
+Contributors
+------------
+
+* Kevin Cantu (killerswan)
+* Ben Boeckel (mathstuf)
+* Jeremy Fitzhardinge (jsgf)
+* Mark Wotton (mwotton)
+* Phillip (sitharus)
+
 Changelog
 ---------
 
