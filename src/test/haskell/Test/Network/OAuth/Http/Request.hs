@@ -162,12 +162,12 @@ ftest10 = T.TestCase $ do
   T.assertEqual
     "Test showURL do the right thing"
     ("https://foo.bar:9999/%20foo%23/bar?a=%C3%A1&b=10&c=%22test%22")
-    (showURL $ ReqHttp Http11 True "foo.bar" 9999 GET empty [""," foo#","bar"] (fromList [("a","á"),("b","10"),("c","\"test\"")]) B.empty)
+    (showURL $ ReqHttp Http11 True "foo.bar" 9999 GET empty [""," foo#","bar"] (fromList [("a","á"),("b","10"),("c","\"test\"")]) B.empty [])
 
 ftest11 = T.TestCase $ do
   T.assertEqual
     "Test parseURL do the right thing"
-    (Just $ ReqHttp Http11 True "foo.bar" 9999 GET empty [""," foo#","bar"] (fromList [("a","á"),("b","10"),("c","\"test\"")]) B.empty)
+    (Just $ ReqHttp Http11 True "foo.bar" 9999 GET empty [""," foo#","bar"] (fromList [("a","á"),("b","10"),("c","\"test\"")]) B.empty [])
     (parseURL "https://foo.bar:9999/%20foo%23/bar?a=%C3%A1&b=10&c=%22test%22")
 
 ftest12 = T.TestCase $ do
@@ -179,8 +179,8 @@ ftest12 = T.TestCase $ do
 
   T.assertEqual
     "Test parseURL . showURL = id"
-    (ReqHttp Http11 True "foo.bar" 9999 GET empty [""," foo#","bar"] (fromList [("a","á"),("b","10"),("c","\"test\"")]) B.empty)
-    (fromJust . parseURL . showURL $ ReqHttp Http11 True "foo.bar" 9999 GET empty [""," foo#","bar"] (fromList [("a","á"),("b","10"),("c","\"test\"")]) B.empty)
+    (ReqHttp Http11 True "foo.bar" 9999 GET empty [""," foo#","bar"] (fromList [("a","á"),("b","10"),("c","\"test\"")]) B.empty [])
+    (fromJust . parseURL . showURL $ ReqHttp Http11 True "foo.bar" 9999 GET empty [""," foo#","bar"] (fromList [("a","á"),("b","10"),("c","\"test\"")]) B.empty [])
 
 ftest13 = T.TestCase $ do
   T.assertEqual

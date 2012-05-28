@@ -33,6 +33,10 @@ module Network.OAuth.Http.Request
        , FieldList()
        , Version(..)
        , Method(..)
+       , FormDataPart(..)
+       , Content(..)
+         -- * conversion of [FormDataPart] to curl's [HttpPost]
+       , convertMultipart
          -- * FieldList related functions
        , fromList
        , singleton
@@ -58,6 +62,8 @@ module Network.OAuth.Http.Request
        ) where
 
 import Control.Monad.State
+import qualified Network.Curl.Post as Curl (HttpPost(..), Content(..))
+import qualified Network.Curl.Types as Curl (Long)
 import Network.OAuth.Http.PercentEncoding
 import Network.OAuth.Http.Util
 import Data.List (intercalate,isPrefixOf)
@@ -65,6 +71,7 @@ import Data.Monoid
 import Data.Char (toLower)
 import qualified Data.ByteString.Lazy as B
 import qualified Data.Binary as Bi
+import Foreign.C.String (CString)
 
 -- | All known HTTP methods
 data Method =   GET
@@ -85,17 +92,55 @@ data Version =   Http10
 newtype FieldList = FieldList { unFieldList :: [(String,String)] }
   deriving (Eq,Ord)
 
-data Request = ReqHttp { version    :: Version      -- ^ Protocol version
-                       , ssl        :: Bool         -- ^ Wheter or not to use ssl
-                       , host       :: String       -- ^ The hostname to connect to
-                       , port       :: Int          -- ^ The port to connect to
-                       , method     :: Method       -- ^ The HTTP method of the request.
-                       , reqHeaders :: FieldList    -- ^ Request headers
-                       , pathComps  :: [String]     -- ^ The path split into components 
-                       , qString    :: FieldList    -- ^ The query string, usually set for GET requests
-                       , reqPayload :: B.ByteString -- ^ The message body
+data Request = ReqHttp { version          :: Version        -- ^ Protocol version
+                       , ssl              :: Bool           -- ^ Wheter or not to use ssl
+                       , host             :: String         -- ^ The hostname to connect to
+                       , port             :: Int            -- ^ The port to connect to
+                       , method           :: Method         -- ^ The HTTP method of the request.
+                       , reqHeaders       :: FieldList      -- ^ Request headers
+                       , pathComps        :: [String]       -- ^ The path split into components 
+                       , qString          :: FieldList      -- ^ The query string, usually set for GET requests
+                       , reqPayload       :: B.ByteString   -- ^ The message body (the first/only string part)
+                       , multipartPayload :: [FormDataPart] -- ^ The message body (i.e., for multipart/form-data)
                        }
   deriving (Eq,Show)
+
+-- one part of a multipart/form-data POST request
+data FormDataPart =
+   FormDataPart { postName     :: String
+                , contentType  :: Maybe String
+                , content      :: Content
+                , extraHeaders :: [String]
+                -- , extraEntries :: [FormDataPart]    -- commented out in Curl's Post.hs
+                , showName     :: Maybe String
+                }
+   deriving (Eq, Show)
+
+-- data for one part
+-- as either a String or a FilePath (for Curl to open and include)
+data Content = ContentFile FilePath
+             | ContentBuffer CString Curl.Long
+             | ContentString String
+   deriving (Eq, Show)
+
+-- convert one Part to Curl's HttpPost
+convertMultipart :: [FormDataPart] -> [Curl.HttpPost]
+convertMultipart parts =
+   map convertPart parts
+   where
+      convertPart :: FormDataPart -> Curl.HttpPost
+      convertPart part =
+         Curl.HttpPost { Curl.postName     = postName     part
+                       , Curl.contentType  = contentType  part
+                       , Curl.content      = convertCont (content part)
+                       , Curl.extraHeaders = extraHeaders part
+                       , Curl.showName     = showName     part
+                       }
+
+      convertCont :: Content -> Curl.Content
+      convertCont (ContentFile   z) = Curl.ContentFile   z
+      convertCont (ContentString y) = Curl.ContentString y
+      convertCont (ContentBuffer w x) = Curl.ContentBuffer w x
 
 -- | Show the protocol in use (currently either https or http)
 showProtocol :: Request -> String
@@ -154,6 +199,7 @@ parseURL tape = evalState parser (tape,Just initial)
                           , pathComps  = []
                           , qString    = fromList []
                           , reqPayload = B.empty
+                          , multipartPayload = []
                           }
 
 -- | Parse a query string.
@@ -175,6 +221,7 @@ parseQString tape = evalState parser (tape,Just initial)
                           , pathComps  = []
                           , qString    = fromList []
                           , reqPayload = B.empty
+                          , multipartPayload = []
                           }
 
 -- | Creates a FieldList type from a list.
