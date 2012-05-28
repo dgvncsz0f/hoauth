@@ -39,7 +39,8 @@ import Network.OAuth.Http.CurlHttpClient
 import Network.OAuth.Http.PercentEncoding
 import qualified Data.ByteString.Lazy as B
 import qualified Data.Binary as Bi
-import qualified Codec.Crypto.RSA as R
+import qualified Codec.Crypto.RSA        as R
+import qualified Crypto.Types.PubKey.RSA as R
 
 ftest0 = T.TestCase $ do
   let token     = fromApplication $ Application "dpf43f3p2l4k3l03" "kd94hf93k423kf44" (URL "http://printer.example.com/request_token_ready")
@@ -275,7 +276,7 @@ ftest12 = T.TestCase $ do
   let modulus  = 0x00ce3fe6af65b85d7744a287268f0aea4fd783005b6306f353e9e49a9583f7d4ebc7870a65fc30ccdd5ce7a84b8d5a9356f06ae3d00599e5c8bda3b543f4331ccf04fd931e108d75e4abea9c120f46fe735138c31344e4b74a1788edf161d9c2ac6f8cc993927fcab4ef956b7150278daed0d2d630413a5ad56658026a3bcb3ced
       expoent  = 0x17e54d6bdae42e68081ab07fe628c496f58826fd6f8eb9986a4be321198618342d0cd746939e6fcde1dab123f7bf9bbc81e4507aa47b7d24f1dbcabf91c66e3ad490605bcc36a8568bce27dc9d1584dc3e443499f819dc0a9d2b0233f5ae6d8ab8435121c811ffc7a5491718479d246d52f27172e5903f66814431186ec607e1
       numbytes = 128
-      key      = R.PrivateKey numbytes modulus expoent
+      key      = R.PrivateKey numbytes modulus expoent 0 0 0 0 0 -- optional fields are zero, per documentation
       Just req = parseURL "http://foo.bar:8080/foobar?foo=bar&bar=foo"
       app      = Application "<<dummy>>" "<<dummy>>" OOB
   T.assertEqual
@@ -287,7 +288,7 @@ ftest13 = T.TestCase $ do
   let modulus   = 0x00ce3fe6af65b85d7744a287268f0aea4fd783005b6306f353e9e49a9583f7d4ebc7870a65fc30ccdd5ce7a84b8d5a9356f06ae3d00599e5c8bda3b543f4331ccf04fd931e108d75e4abea9c120f46fe735138c31344e4b74a1788edf161d9c2ac6f8cc993927fcab4ef956b7150278daed0d2d630413a5ad56658026a3bcb3ced
       expoent   = 0x17e54d6bdae42e68081ab07fe628c496f58826fd6f8eb9986a4be321198618342d0cd746939e6fcde1dab123f7bf9bbc81e4507aa47b7d24f1dbcabf91c66e3ad490605bcc36a8568bce27dc9d1584dc3e443499f819dc0a9d2b0233f5ae6d8ab8435121c811ffc7a5491718479d246d52f27172e5903f66814431186ec607e1
       numbytes  = 128
-      key       = R.PrivateKey numbytes modulus expoent
+      key       = R.PrivateKey numbytes modulus expoent 0 0 0 0 0
       Just req0 = parseURL "http://foo.bar:80/foobar?foo=bar&bar=foo"
       Just req1 = parseURL "https://foo.bar:443/foobar?foo=bar&bar=foo"
       app       = Application "<<dummy>>" "<<dummy>>" OOB
