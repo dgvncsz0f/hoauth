@@ -38,6 +38,7 @@ import Network.OAuth.Http.Response
 import Control.Monad.Trans
 import Data.Char (chr,ord)
 import qualified Data.ByteString.Lazy as B
+import qualified Data.ByteString.Lazy.UTF8 as U
 
 data CurlClient = CurlClient | OptionsCurlClient [CurlOption]
 
@@ -102,4 +103,7 @@ instance HttpClient CurlClient where
                                of CurlClient -> []
                                   OptionsCurlClient o -> o
           
-          fromResponse rsp = RspHttp (respStatus rsp) (respStatusLine rsp) (fromList.respHeaders $ rsp) (B.pack.map (fromIntegral.ord).respBody $ rsp)
+          packedBody rsp = U.fromString . respBody $ rsp
+
+          fromResponse rsp = RspHttp (respStatus rsp) (respStatusLine rsp) (fromList.respHeaders $ rsp) (packedBody rsp)
+
