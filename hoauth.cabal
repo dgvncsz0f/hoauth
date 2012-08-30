@@ -44,4 +44,4 @@ library
 
 source-repository head
   type:     git
-  location: git://github.com/dsouza/hoauth.git
+  location: git://github.com/dgvncsz0f/hoauth.git
