@@ -59,6 +59,12 @@ Changelog
 
 ::
 
+  v0.3.5
+
+* [bugfix: #14] Suggested fix for response bodies with UTF-8 (killerswan)
+
+::
+
   v0.3.4
 
 * libcurl to actually verify server certificates using system-level root CA certificate (killerswan)
