@@ -9,7 +9,9 @@ Example
 -------
 
 The following code should perform a 3 legged oauth request using Yahoo
-as the service provider::
+as the service provider
+
+.. code-block:: haskell
 
   reqUrl   = fromJust $ parseURL "https://api.login.yahoo.com/oauth/v2/get_request_token"
   accUrl   = fromJust $ parseURL "https://api.login.yahoo.com/oauth/v2/get_token"
@@ -24,7 +26,9 @@ as the service provider::
   
                                   }
 
-Another example, this time using Twitter as the service provider::
+Another example, this time using Twitter as the service provider
+
+.. code-block:: haskell
 
   reqUrl   = fromJust $ parseURL "http://twitter.com/oauth/request_token"
   accUrl   = fromJust $ parseURL "http://twitter.com/oauth/access_token"
