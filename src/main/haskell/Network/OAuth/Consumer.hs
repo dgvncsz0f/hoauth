@@ -185,7 +185,7 @@ signature :: SigMethod -> Token -> Request -> String
 signature m token req = case m
                         of PLAINTEXT -> key
                            HMACSHA1  -> b64encode $ S.bytestringDigest (S.hmacSha1 (bsencode key) (bsencode text))
-                           RSASHA1 k -> b64encode $ R.rsassa_pkcs1_v1_5_sign R.ha_SHA1 k (bsencode text)
+                           RSASHA1 k -> b64encode $ R.rsassa_pkcs1_v1_5_sign R.hashSHA1 k (bsencode text)
 
   where bsencode  = B.pack . map (fromIntegral.ord)
         b64encode = B64.encode . B.unpack
